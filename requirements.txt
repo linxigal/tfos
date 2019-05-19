@@ -1,0 +1,5 @@
+py4j
+pyspark
+scipy
+sphinx
+tensorflow
