@@ -7,12 +7,9 @@
 
 import os
 
-CURRENT_PATH = os.getcwd()
-
-ROOT_PATH = os.path.dirname(CURRENT_PATH)
-
+CURRENT_PATH = os.path.dirname(__file__)
+ROOT_PATH = os.path.dirname(os.path.dirname(CURRENT_PATH))
 GITHUB = os.path.dirname(ROOT_PATH)
-
 OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
 
 if not os.path.exists(OUTPUT_DATA):

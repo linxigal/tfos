@@ -19,14 +19,14 @@ def map_fun(args, ctx):
     task_index = ctx.task_index
 
     # Get TF cluster and server instances
-    cluster, server = ctx.start_cluster_server(1, args['rdma'])
+    cluster, server = ctx.start_cluster_server(1, args.rdma)
 
     logging.error("=" * 100)
     logging.error(f"cluster: {cluster}")
     logging.error(f"server: {server}")
 
     # Create generator for Spark data feed
-    tf_feed = ctx.get_data_feed(args['mode'] == 'train')
+    tf_feed = ctx.get_data_feed(args.mode == 'train')
 
     def rdd_generator():
         while not tf_feed.should_stop():
@@ -48,7 +48,7 @@ def map_fun(args, ctx):
 
             # Dataset for input data
             ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32),
-                                                (tf.TensorShape([4]), tf.TensorShape([1]))).batch(args['batch_size'])
+                                                (tf.TensorShape([4]), tf.TensorShape([1]))).batch(args.batch_size)
             iterator = ds.make_one_shot_iterator()
             x, y_ = iterator.get_next()
 
@@ -81,11 +81,11 @@ def map_fun(args, ctx):
             init_op = tf.global_variables_initializer()
 
         # Create a "supervisor", which oversees the training process and stores model state into HDFS
-        logdir = ctx.absolute_path(args['model_path'])
+        logdir = ctx.absolute_path(args.model_path)
         print("tensorflow model path: {0}".format(logdir))
         summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
 
-        hooks = [tf.train.StopAtStepHook(last_step=args['steps'])] if args['mode'] == "train" else []
+        hooks = [tf.train.StopAtStepHook(last_step=args.steps)] if args.mode == "train" else []
         with tf.train.MonitoredTrainingSession(master=server.target,
                                                is_chief=(task_index == 0),
                                                scaffold=tf.train.Scaffold(init_op=init_op, summary_op=summary_op,
@@ -100,7 +100,7 @@ def map_fun(args, ctx):
                 # See `tf.train.SyncReplicasOptimizer` for additional details on how to
                 # perform *synchronous* training.
 
-                if args['mode'] == "train":
+                if args.mode == "train":
                     _, summary, step = sess.run([train_op, summary_op, global_step])
                     if (step % 2 == 0) and (not sess.should_stop()):
                         # print("{} step: {} accuracy: {}".format(datetime.now().isoformat(), step, sess.run(accuracy)))
@@ -117,12 +117,12 @@ def map_fun(args, ctx):
 
         print("{} stopping MonitoredTrainingSession".format(datetime.now().isoformat()))
 
-        if sess.should_stop() or step >= args['steps']:
+        if sess.should_stop() or step >= args.steps:
             tf_feed.terminate()
 
             # WORKAROUND FOR https://github.com/tensorflow/tensorflow/issues/21745
             # wait for all other nodes to complete (via done files)
-            done_dir = "{}/{}/done".format(ctx.absolute_path(args['model_path']), args['mode'])
+            done_dir = "{}/{}/done".format(ctx.absolute_path(args.model_path), args.mode)
             print("Writing done file to: {}".format(done_dir))
             tf.gfile.MakeDirs(done_dir)
             with tf.gfile.GFile("{}/{}".format(done_dir, ctx.task_index), 'w') as done_file:
