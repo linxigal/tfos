@@ -11,6 +11,11 @@ CURRENT_PATH = os.path.dirname(__file__)
 ROOT_PATH = os.path.dirname(os.path.dirname(CURRENT_PATH))
 GITHUB = os.path.dirname(ROOT_PATH)
 OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
+TENSORBOARD = os.path.join(ROOT_PATH, 'tensorboard')
 
 if not os.path.exists(OUTPUT_DATA):
     os.makedirs(OUTPUT_DATA)
+
+
+if not os.path.exists(TENSORBOARD):
+    os.makedirs(TENSORBOARD)

@@ -6,6 +6,7 @@
 """
 
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -21,10 +22,6 @@ def map_fun(args, ctx):
     # Get TF cluster and server instances
     cluster, server = ctx.start_cluster_server(1, args.rdma)
 
-    logging.error("=" * 100)
-    logging.error(f"cluster: {cluster}")
-    logging.error(f"server: {server}")
-
     # Create generator for Spark data feed
     tf_feed = ctx.get_data_feed(args.mode == 'train')
 
@@ -39,7 +36,6 @@ def map_fun(args, ctx):
             yield (data, label)
 
     if job_name == "ps":
-        logging.error("%" * 100)
         server.join()
     elif job_name == "worker":
         # Assigns ops to the local worker by default.
@@ -83,7 +79,8 @@ def map_fun(args, ctx):
         # Create a "supervisor", which oversees the training process and stores model state into HDFS
         logdir = ctx.absolute_path(args.model_path)
         print("tensorflow model path: {0}".format(logdir))
-        summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
+        summary_writer = tf.summary.FileWriter(os.path.join(args.tb_path, "logistic_tensorboard_%d" % worker_num),
+                                               graph=tf.get_default_graph())
 
         hooks = [tf.train.StopAtStepHook(last_step=args.steps)] if args.mode == "train" else []
         with tf.train.MonitoredTrainingSession(master=server.target,

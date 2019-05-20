@@ -14,7 +14,7 @@ from collections import namedtuple
 from pyspark import SparkConf, SparkContext
 from sklearn.datasets import load_iris
 from tensorflowonspark import TFCluster
-from tfos.basic_model import GITHUB, ROOT_PATH, logistic_regression_dist
+from tfos.basic_model import GITHUB, ROOT_PATH, TENSORBOARD, logistic_regression_dist
 from tfos.utils.op_example import *
 
 FLAGS = tf.app.flags.FLAGS
@@ -29,12 +29,13 @@ tf.app.flags.DEFINE_integer("num_ps", 1, "num ps")
 tf.app.flags.DEFINE_integer("steps", 1000, "steps")
 tf.app.flags.DEFINE_integer("rdma", 0, "rdma")
 tf.app.flags.DEFINE_integer("tensorboard", 1, "tensorboard")
+tf.app.flags.DEFINE_string("tb_path", TENSORBOARD, "tensorboard log file path")
 sc = SparkContext(conf=SparkConf().setAppName('data_trans')
-                  .setMaster('spark://192.168.209.128:7077')
+                  # .setMaster('spark://192.168.209.128:7077')
                   # .setMaster('spark://localhost:7077')
                   # .setMaster('local[*]')
                   .set("spark.jars", join(GITHUB, "TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar")))
-ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma'])
+ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma', 'tb_path'])
 sys.path.append('/home/wjl/github/tfos')
 
 
@@ -51,7 +52,7 @@ def load_data():
 def op_model(rdd):
     model_path = FLAGS.model_path
     mode = FLAGS.mode
-    params = ARGS._make([FLAGS.batch_size, mode, FLAGS.steps, model_path, FLAGS.rdma])
+    params = ARGS._make([FLAGS.batch_size, mode, FLAGS.steps, model_path, FLAGS.rdma, FLAGS.tb_path])
     logging.error(params._asdict())
     cluster = TFCluster.run(sc, logistic_regression_dist.map_fun, params, FLAGS.cluster_size,
                             FLAGS.num_ps, FLAGS.tensorboard, TFCluster.InputMode.SPARK)
@@ -59,6 +60,7 @@ def op_model(rdd):
         cluster.train(rdd, FLAGS.epochs)
     else:
         label_rdd = cluster.inference(rdd)
+        print(label_rdd.take(10))
         label_rdd.saveAsTextFile(model_path)
     cluster.shutdown()
 

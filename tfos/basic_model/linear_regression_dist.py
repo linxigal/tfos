@@ -21,10 +21,6 @@ def map_fun(args, ctx):
     # Get TF cluster and server instances
     cluster, server = ctx.start_cluster_server(1, args['rdma'])
 
-    logging.error("=" * 100)
-    logging.error(f"cluster: {cluster}")
-    logging.error(f"server: {server}")
-
     # Create generator for Spark data feed
     tf_feed = ctx.get_data_feed(args['mode'] == 'train')
 
@@ -39,7 +35,6 @@ def map_fun(args, ctx):
             yield (data, label)
 
     if job_name == "ps":
-        logging.error("%" * 100)
         server.join()
     elif job_name == "worker":
         # Assigns ops to the local worker by default.
@@ -68,7 +63,6 @@ def map_fun(args, ctx):
 
             tf.summary.scalar("loss", loss)
             # Gradient Descent
-            # optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
             train_op = tf.train.AdagradOptimizer(0.01).minimize(loss, global_step=global_step)
 
             saver = tf.train.Saver()
