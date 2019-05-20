@@ -13,13 +13,13 @@ from collections import namedtuple
 from pyspark import SparkConf, SparkContext
 from sklearn.datasets import load_boston
 from tensorflowonspark import TFCluster
-from tfos.basic_model import GITHUB, ROOT_PATH, linear_regression_dist
+from tfos.basic_model import GITHUB, ROOT_PATH, TENSORBOARD, linear_regression_dist
 from tfos.utils.op_example import *
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string("output_path", join(ROOT_PATH, "output_data/iris.tfr"), "输出文件路径")
-tf.app.flags.DEFINE_string("input_path", join(ROOT_PATH, "output_data/iris.tfr"), "输入文件路径")
-tf.app.flags.DEFINE_string("model_path", join(ROOT_PATH, "output_data/logistic_regression_model"), "训练模型保存路径")
+tf.app.flags.DEFINE_string("output_path", join(ROOT_PATH, "output_data/boston.tfr"), "输出文件路径")
+tf.app.flags.DEFINE_string("input_path", join(ROOT_PATH, "output_data/boston.tfr"), "输入文件路径")
+tf.app.flags.DEFINE_string("model_path", join(ROOT_PATH, "output_data/linear_regression_model"), "训练模型保存路径")
 tf.app.flags.DEFINE_string("mode", "train", "train|inference")
 tf.app.flags.DEFINE_integer("batch_size", 10, "batch size")
 tf.app.flags.DEFINE_integer("cluster_size", 3, "num executor")
@@ -28,6 +28,7 @@ tf.app.flags.DEFINE_integer("num_ps", 1, "num ps")
 tf.app.flags.DEFINE_integer("steps", 1000, "steps")
 tf.app.flags.DEFINE_integer("rdma", 0, "rdma")
 tf.app.flags.DEFINE_integer("tensorboard", 1, "tensorboard")
+tf.app.flags.DEFINE_string("tb_path", TENSORBOARD, "tensorboard log file path")
 sc = SparkContext(conf=SparkConf().setAppName('data_trans')
                   .set("spark.jars", join(GITHUB, "TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar")))
 ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma'])
@@ -47,7 +48,7 @@ def load_data():
 def op_model(rdd):
     model_path = FLAGS.model_path
     mode = FLAGS.mode
-    params = ARGS._make([FLAGS.batch_size, mode, FLAGS.steps, model_path, FLAGS.rdma])
+    params = ARGS._make([FLAGS.batch_size, mode, FLAGS.steps, model_path, FLAGS.rdma, FLAGS.tb_path])
     logging.error(params._asdict())
     cluster = TFCluster.run(sc, linear_regression_dist.map_fun, params, FLAGS.cluster_size,
                             FLAGS.num_ps, FLAGS.tensorboard, TFCluster.InputMode.SPARK)

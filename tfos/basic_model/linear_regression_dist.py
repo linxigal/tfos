@@ -6,6 +6,7 @@
 """
 
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -72,7 +73,8 @@ def map_fun(args, ctx):
         # Create a "supervisor", which oversees the training process and stores model state into HDFS
         logdir = ctx.absolute_path(args.model_path)
         print("tensorflow model path: {0}".format(logdir))
-        summary_writer = tf.summary.FileWriter("tensorboard_%d" % worker_num, graph=tf.get_default_graph())
+        summary_writer = tf.summary.FileWriter(os.path.join(args.tb_path, "tensorboard_%d" % worker_num),
+                                               graph=tf.get_default_graph())
 
         hooks = [tf.train.StopAtStepHook(last_step=args.steps)] if args.mode == "train" else []
         with tf.train.MonitoredTrainingSession(master=server.target,
