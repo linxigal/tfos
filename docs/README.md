@@ -2,9 +2,12 @@
 
 
 * [一、安装与环境]()
-    * [TensorFlowOnSpark环境搭建]() 
+    * [python环境安装](python_env.md)
+    * [TensorFlowOnSpark环境搭建](env.md) 
     
 * [二、Tensorflow]()
-    * [Tensorflow 分布式运行]()
+    * [TensorFlow Dataset API](TensorFlowDatasetAPI.md)
+    * [Tensorflow 分布式运行](tensorflow分布式运行.md)
     
-* [三、模型]()
+* [三、架构]()
+    * [tensorflowonspark架构](tensorflowonspark架构.md)
