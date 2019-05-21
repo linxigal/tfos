@@ -1,15 +1,15 @@
 # TensorFlow中的Dataset API
 
-## 概述
+## 一、 概述
 
 使用Dataset的三个步骤：
 1. 载入数据：为数据创建一个Dataset实例
 2. 创建一个迭代器：使用创建的数据集来构造一个Iterator实例以遍历数据集
 3. 使用数据：使用创建的迭代器，我们可以从数据集中获取数据元素，从而输入到模型中去。
 
-## 载入数据
+## 二、 载入数据
 
-### 从numpy载入
+### 1. 从numpy载入
 这是最常见的情况，假设我们有一个numpy数组，我们想将它传递给TensorFlow
 ```
 # create a random vector of shape (100,2)
@@ -23,21 +23,21 @@ features, labels = (np.random.sample((100,2)), np.random.sample((100,1)))
 dataset = tf.data.Dataset.from_tensor_slices((features,labels))
 ```
 
-### 从tensors中载入
+### 2. 从tensors中载入
 我们也可以用一些张量初始化数据集
 ```
 # using a tensor
 dataset = tf.data.Dataset.from_tensor_slices(tf.random_uniform([100, 2]))
 ```
 
-### 从placeholder中载入
+### 3. 从placeholder中载入
 如果我们想动态地改变Dataset中的数据，使用这种方式是很有用的。
 ```
 x = tf.placeholder(tf.float32, shape=[None,2])
 dataset = tf.data.Dataset.from_tensor_slices(x)
 ```
 
-### 从generator载入
+### 4. 从generator载入
 我们也可以从generator中初始化一个Dataset。当一个数组中元素长度不相同时，使用这种方式处理是很有效的。（例如一个序列）
 ```
 sequence = np.array([[1],[2,3],[3,4]])
@@ -51,11 +51,11 @@ dataset = tf.data.Dataset().from_generator(generator, output_types=tf.float32, o
 在这种情况下，需要指定数据的类型和大小以创建正确的tensor
 
 
-## 创建一个迭代器
+## 三、 创建一个迭代器
 
 我们已经知道了如何创建数据集，但是如何从中获取数据呢？我们需要使用一个Iterator遍历数据集并重新得到数据真实值。有四种形式的迭代器。
 
-### One shot Iterator
+### 1. One shot Iterator
 这个Iterator是一个“one shot iterator”，即只能从头到尾读取一次， 遍历完后会报tf.errors.OutOfRangeError，这是最简单的迭代器，下面给出第一个例子：
 ```
 x = np.random.sample((100,2))
@@ -88,7 +88,7 @@ for one_element in tfe.Iterator(dataset):
     print(one_element)
 ```
 
-### 可初始化的迭代器
+### 2. 可初始化的迭代器
 如果我们想建立一个可以在运行时改变数据源的动态数据集，我们可以用placeholder 创建一个数据集。接着用常见的feed-dict机制初始化这个placeholder。这些工作可以通过使用一个可初始化的迭代器完成。使用上一节的第三个例子
 ```
 # using a placeholder
@@ -129,7 +129,7 @@ with tf.Session() as sess:
     print(sess.run([features, labels]))
 ```
 
-### 可重新初始化的迭代器
+### 3. 可重新初始化的迭代器
 这个概念和之前的相似，我们想在数据间动态切换。但是我们是转换数据集而不是把新数据送到相同的数据集。和之前一样，我们需要一个训练集和一个测试集
 ```
 # making fake data using numpy
@@ -182,11 +182,11 @@ with tf.Session() as sess:
     print(sess.run([features, labels]))
 ```
 
-### Feedable迭代器
+### 4. Feedable迭代器
 老实说，我并不认为这种迭代器有用。这种方式是在迭代器之间转换而不是在数据集间转换，比如在来自make_one_shot_iterator()的一个迭代器和来自make_initializable_iterator()的一个迭代器之间进行转换。
 
 
-## 使用数据
+## 四、 使用数据
 
 在之前的例子中，我们使用session来打印Dataset中next元素的值
 ```
@@ -255,7 +255,7 @@ Iter: 8, Loss: 0.1220
 Iter: 9, Loss: 0.1210
 ```
 
-## 有用的技巧
+## 五、 有用的技巧
 
 ### 1. batch
 batch可以将数据集的连续元素合成批次。
@@ -532,7 +532,7 @@ with tf.Session() as sess:
 (3, 8)
 
 
-## 参考
+## 六、 参考
 [如何使用TensorFlow中的Dataset API](https://blog.csdn.net/dQCFKyQDXYm3F8rB0/article/details/79342369)
 
 [TensorFlow全新的数据读取方式：Dataset API入门教程](https://zhuanlan.zhihu.com/p/30751039)
