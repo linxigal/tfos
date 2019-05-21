@@ -66,8 +66,8 @@ def op_model(rdd):
 
 
 def main(unused_args):
-    # data = load_iris()
-    # save_data(data)
+    data = load_iris()
+    save_data(data)
     rdd = load_data()
     op_model(rdd)
 

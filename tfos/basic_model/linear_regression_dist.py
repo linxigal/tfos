@@ -20,10 +20,10 @@ def map_fun(args, ctx):
     task_index = ctx.task_index
 
     # Get TF cluster and server instances
-    cluster, server = ctx.start_cluster_server(1, args['rdma'])
+    cluster, server = ctx.start_cluster_server(1, args.rdma)
 
     # Create generator for Spark data feed
-    tf_feed = ctx.get_data_feed(args['mode'] == 'train')
+    tf_feed = ctx.get_data_feed(args.mode == 'train')
 
     def rdd_generator():
         while not tf_feed.should_stop():
@@ -44,13 +44,13 @@ def map_fun(args, ctx):
 
             # Dataset for input data
             ds = tf.data.Dataset.from_generator(rdd_generator, (tf.float32, tf.float32),
-                                                (tf.TensorShape([4]), tf.TensorShape([1]))).batch(args.batch_size)
+                                                (tf.TensorShape([13]), tf.TensorShape([1]))).batch(args.batch_size)
             iterator = ds.make_one_shot_iterator()
             x, y_ = iterator.get_next()
 
             # Set model weights
-            W = tf.Variable(tf.truncated_normal([4, 3], stddev=1), name="weight")
-            b = tf.Variable(tf.zeros([3]), name="bias")
+            W = tf.Variable(tf.truncated_normal([13], stddev=1), name="weight")
+            b = tf.Variable(tf.zeros([1]), name="bias")
             tf.summary.histogram("hidden_weights", W)
 
             global_step = tf.train.get_or_create_global_step()
@@ -59,8 +59,9 @@ def map_fun(args, ctx):
             pred = tf.add(tf.multiply(x, W), b)
 
             # Mean squared error
-            n_samples = x.shape[0]
-            loss = tf.reduce_sum(tf.pow(pred - y_, 2)) / (2 * n_samples)
+            # n_samples = x.shape[0]
+            # loss = tf.reduce_sum(tf.pow(pred - y_, 2)) / (2 * n_samples)
+            loss = tf.reduce_sum(tf.pow(pred - y_, 2))
 
             tf.summary.scalar("loss", loss)
             # Gradient Descent

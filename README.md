@@ -10,15 +10,6 @@ TensorFlowOnSpark
 ```
 pip install -r requirements.txt
 ```
-
-## 模型
-
-### 基本模型
-
-#### 线性回归
-
-#### 逻辑回归
-
-
-### 深度网络
+[python环境安装](docs/python_env.md)
+[TensorFlowOnSpark环境搭建](docs/env.md) 
 

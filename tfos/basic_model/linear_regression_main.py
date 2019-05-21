@@ -22,7 +22,7 @@ tf.app.flags.DEFINE_string("input_path", join(ROOT_PATH, "output_data/boston.tfr
 tf.app.flags.DEFINE_string("model_path", join(ROOT_PATH, "output_data/linear_regression_model"), "训练模型保存路径")
 tf.app.flags.DEFINE_string("mode", "train", "train|inference")
 tf.app.flags.DEFINE_integer("batch_size", 10, "batch size")
-tf.app.flags.DEFINE_integer("cluster_size", 3, "num executor")
+tf.app.flags.DEFINE_integer("cluster_size", 2, "num executor")
 tf.app.flags.DEFINE_integer("epochs", 1, "num epochs")
 tf.app.flags.DEFINE_integer("num_ps", 1, "num ps")
 tf.app.flags.DEFINE_integer("steps", 1000, "steps")
@@ -30,8 +30,9 @@ tf.app.flags.DEFINE_integer("rdma", 0, "rdma")
 tf.app.flags.DEFINE_integer("tensorboard", 1, "tensorboard")
 tf.app.flags.DEFINE_string("tb_path", TENSORBOARD, "tensorboard log file path")
 sc = SparkContext(conf=SparkConf().setAppName('data_trans')
+                  .setMaster('spark://192.168.209.128:7077')
                   .set("spark.jars", join(GITHUB, "TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar")))
-ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma'])
+ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma', 'tb_path'])
 sys.path.append('/home/wjl/github/tfos')
 
 
@@ -61,10 +62,10 @@ def op_model(rdd):
 
 
 def main(unused_args):
-    data = load_boston()
-    save_data(data)
-    # rdd = load_data()
-    # op_model(rdd)
+    # data = load_boston()
+    # save_data(data)
+    rdd = load_data()
+    op_model(rdd)
 
 
 if __name__ == "__main__":

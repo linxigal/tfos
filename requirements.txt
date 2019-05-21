@@ -1,5 +1,5 @@
-py4j
-pyspark
-scipy
-sphinx
-tensorflow
+py4j==0.10.7
+pyspark==2.4.3
+tensorflow==1.13.1
+scikit-learn==0.21.1
+pandas==0.24.2
