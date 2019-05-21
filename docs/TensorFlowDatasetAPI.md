@@ -257,89 +257,284 @@ Iter: 9, Loss: 0.1210
 
 ## 有用的技巧
 
-### batch
-通常情况下，batch是一件麻烦的事情，但是通过Dataset API我们可以使用batch(BATCH_SIZE)方法自动地将数据按照指定的大小batch，默认值是1。在接下来的例子中，我们使用的batch大小为4。
+### 1. batch
+batch可以将数据集的连续元素合成批次。
+
+函数形式：batch(batch_size,drop_remainder=False)
+
+参数batch_size:表示要在单个批次中合并的此数据集的连续元素个数。
+参数drop_remainder：表示在少于batch_size元素的情况下是否应删除最后一批 ; 默认是不删除。
+
+具体例子：
 ```
-# BATCHING
-BATCH_SIZE = 4
-x = np.random.sample((100,2))
-# make a dataset from a numpy array
-dataset = tf.data.Dataset.from_tensor_slices(x).batch(BATCH_SIZE)
+#创建一个Dataset对象
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
 
-iter = dataset.make_one_shot_iterator()
-el = iter.get_next()
+'''合成批次'''
+dataset=dataset.batch(3)
 
+#创建一个迭代器
+iterator = dataset.make_one_shot_iterator()
+
+#get_next()函数可以帮助我们从迭代器中获取元素
+element = iterator.get_next()
+
+#遍历迭代器，获取所有元素
 with tf.Session() as sess:
-    print(sess.run(el)) 
+   for i in range(9):
+       print(sess.run(element))
 ```
-输出：
-```
-[[ 0.65686128  0.99373963]
- [ 0.69690451  0.32446826]
- [ 0.57148422  0.68688242]
- [ 0.20335116  0.82473219]]
-```
+以上代码运行结果为：
+[1 2 3]
+[4 5 6]
+[7 8 9]
 
+即把目标对象合成3个批次，返回的对象是传入Dataset对象。
 
-### Repeat
+### 2. Repeat
 使用.repeat()我们可以指定数据集迭代的次数。如果没有设置参数，则迭代会一直循环，没有结束，因此也不会抛出tf.errors.OutOfRangeError异常。通常来说，一直循环并直接用标准循环控制epoch的次数能取得较好的效果。
 
-### Shuffle
-我们可以使用shuffle()方法将Dataset随机洗牌，默认是在数据集中对每一个epoch洗牌，这种处理可以避免过拟合。
+### 3. Shuffle
+随机混洗数据集的元素。
 
-我们也可以设置buffer_size参数，下一个元素将从这个固定大小的缓存中按照均匀分布抽取。例子：
-```
-# BATCHING
-BATCH_SIZE = 4
-x = np.array([[1],[2],[3],[4]])
-# make a dataset from a numpy array
-dataset = tf.data.Dataset.from_tensor_slices(x)
-dataset = dataset.shuffle(buffer_size=100)
-dataset = dataset.batch(BATCH_SIZE)
-iter = dataset.make_one_shot_iterator()
-el = iter.get_next()
-with tf.Session() as sess:
-    print(sess.run(el))
-```
-首次运行输出：
-```
-[[4]
- [2]
- [3]
- [1]]
-```
-第二次运行输出：
-```
-[[3]
- [1]
- [2]
- [4]]
-```
-这样数据就被洗牌了。你还可以设置seed参数
+函数形式：shuffle(buffer_size,seed=None,reshuffle_each_iteration=None)
 
-### Map
-你可以使用map()方法对数据集的每个成员应用自定义的函数。在下面的例子中，我们将每个元素乘以2。
+参数buffer_size:表示新数据集将从中采样的数据集中的元素数。
+参数seed:(可选）表示将用于创建分布的随机种子。
+参数reshuffle_each_iteration:(可选）一个布尔值，如果为true，则表示每次迭代时都应对数据集进行伪随机重组。（默认为True。）
+
+具体例子
 ```
-# MAP
-x = np.array([[1],[2],[3],[4]])
-# make a dataset from a numpy array
-dataset = tf.data.Dataset.from_tensor_slices(x)
-dataset = dataset.map(lambda x: x*2)
-iter = dataset.make_one_shot_iterator()
-el = iter.get_next()
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+#随机混洗数据
+dataset=dataset.shuffle(3)
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
 with tf.Session() as sess:
-#     this will run forever
-        for _ in range(len(x)):
-            print(sess.run(el))
+   for i in range(30，35):
+       print(sess.run(element))
 ```
-输出：
+以上代码运行结果：3 2 4
+
+### 4. Map
+map可以将map_func函数映射到数据集
+
+函数形式：flat_map(map_func，num_parallel_calls=None)
+
+参数map_func:映射函数
+参数num_parallel_calls：表示要并行处理的数字元素。如果未指定，将按顺序处理元素。
+
+具体例子
 ```
-[2]
-[4]
-[6]
-[8]
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+#进行map操作
+dataset=dataset.map(lambda x:x+1)
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(6):
+       print(sess.run(element))
 ```
+以上代码运行结果：2 3 4 5 6 7
+
+### 5. flat_map
+lat_map可以将map_func函数映射到数据集（与map不同的是flat_map传入的数据必须是一个dataset）。
+
+函数形式：flat_map(map_func)
+
+参数map_func:映射函数
+
+具体例子
+```
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+#进行flat_map操作
+dataset=dataset.flat_map(lambda x:tf.data.Dataset.from_tensor_slices(x+[1]))
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(6):
+       print(sess.run(element))
+```
+以上代码运行结果：2 3 4 5 6 7
+
+### 6. concatenate
+concatenate可以将两个Dataset对象进行合并或连接.
+
+函数形式：concatenate(dataset)
+
+参数dataset:表示需要传入的dataset对象。
+
+具体例子：
+```
+#创建dataset对象
+dataset_a=tf.data.Dataset.from_tensor_slices([1,2,3])
+dataset_b=tf.data.Dataset.from_tensor_slices([4,5,6])
+
+#合并dataset
+concat_dataset=dataset_a.concatenate(dataset_b)
+
+iterator = concat_dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(6):
+       print(sess.run(element))
+```
+以上代码运行结果：1 2 3 4 5 6
+
+### 7. filter
+filter可以对传入的dataset数据进行条件过滤.
+
+函数形式：filter(predicate)
+
+参数predicate:条件过滤函数
+
+具体例子
+```
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+#对dataset内的数据进行条件过滤
+dataset=dataset.filter(lambda x:x>3)
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+    for i in range(6):
+       print(sess.run(element))
+```
+以上代码运行结果：4 5 6 7 8 9
+
+### 8. padded_batch
+将数据集的连续元素组合到填充批次中,此转换将输入数据集的多个连续元素组合为单个元素。
+
+函数形式：padded_batch(batch_size,padded_shapes,padding_values=None,drop_remainder=False)
+
+参数batch_size：表示要在单个批次中合并的此数据集的连续元素数。
+参数padded_shapes：嵌套结构tf.TensorShape或 tf.int64类似矢量张量的对象，表示在批处理之前应填充每个输入元素的相应组件的形状。任何未知的尺寸（例如，tf.Dimension(None)在一个tf.TensorShape或-1类似张量的物体中）将被填充到每个批次中该尺寸的最大尺寸。
+参数padding_values:(可选）标量形状的嵌套结构 tf.Tensor，表示用于各个组件的填充值。默认值0用于数字类型，空字符串用于字符串类型。
+参数drop_remainder:(可选）一个tf.bool标量tf.Tensor，表示在少于batch_size元素的情况下是否应删除最后一批 ; 默认行为是不删除较小的批处理。
+
+具体例子
+```
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+dataset=dataset.padded_batch(2,padded_shapes=[])
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(6):
+       print(sess.run(element))
+```
+以上代码运行结果：
+[1 2]
+[3 4]
+
+### 9. shard
+将Dataset分割成num_shards个子数据集。这个函数在分布式训练中非常有用，它允许每个设备读取唯一子集。
+
+函数形式：shard( num_shards,index)
+
+参数num_shards:表示并行运行的分片数。
+参数index:表示工人索引。
+
+### 10. skip
+生成一个跳过count元素的数据集。
+
+函数形式：skip(count)
+
+参数count:表示应跳过以形成新数据集的此数据集的元素数。如果count大于此数据集的大小，则新数据集将不包含任何元素。如果count 为-1，则跳过整个数据集。
+
+具体例子
+```
+dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4,5,6,7,8,9])
+
+#跳过前5个元素
+dataset=dataset.skip(5)
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(30，35):
+       print(sess.run(element))
+```
+以上代码运行结果： 6 7 8
+
+### 11. take
+提取前count个元素形成性数据集
+
+函数形式：take(count)
+
+参数count:表示应该用于形成新数据集的此数据集的元素数。如果count为-1，或者count大于此数据集的大小，则新数据集将包含此数据集的所有元素。
+
+具体例子
+```
+dataset = tf.data.Dataset.from_tensor_slices([1,2,2,3,4,5,6,7,8,9])
+
+#提取前5个元素形成新数据
+dataset=dataset.take(5)
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(30，35):
+       print(sess.run(element))
+```
+以上代码运行结果： 1 2 2
+
+### 12. zip
+将给定数据集压缩在一起
+
+函数形式：zip（datasets）
+
+参数datesets:数据集的嵌套结构。
+
+具体例子
+```
+dataset_a=tf.data.Dataset.from_tensor_slices([1,2,3])
+
+dataset_b=tf.data.Dataset.from_tensor_slices([2,6,8])
+
+zip_dataset=tf.data.Dataset.zip((dataset_a,dataset_b))
+
+iterator = dataset.make_one_shot_iterator()
+
+element = iterator.get_next()
+
+with tf.Session() as sess:
+   for i in range(30，35):
+       print(sess.run(element))
+```
+以上代码运行结果：
+(1, 2)
+(2, 6)
+(3, 8)
+
 
 ## 参考
 [如何使用TensorFlow中的Dataset API](https://blog.csdn.net/dQCFKyQDXYm3F8rB0/article/details/79342369)
+
 [TensorFlow全新的数据读取方式：Dataset API入门教程](https://zhuanlan.zhihu.com/p/30751039)
+
+[Tensorflow中的数据对象Dataset](https://www.cnblogs.com/wkslearner/p/9484443.html)
