@@ -106,3 +106,4 @@ venv.bak/
 output_data/
 tensorboard/
 executor_id
+.svn/
