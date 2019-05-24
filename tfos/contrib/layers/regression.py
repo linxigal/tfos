@@ -9,6 +9,29 @@
 import tensorflow as tf
 
 
+def logistic_regression(graph, x, y):
+    with graph.as_default():
+        features = x.shape[1]
+        labels = y.shape[1]
+        W = tf.Variable(tf.truncated_normal([features, labels], stddev=1), name="weight")
+        b = tf.Variable(tf.zeros([labels]), name="bias")
+        # Construct model
+        y_ = tf.nn.softmax(tf.matmul(x, W) + b)  # Softmax
+        pred = tf.argmax(y, 1, name="prediction")
+        return y_, pred
+
+
+def linear_regression(graph, x, y):
+    with graph.as_default():
+        features = x.shape[1]
+        labels = y.shape[1]
+        W = tf.Variable(tf.truncated_normal([features, labels], stddev=1), name="weight")
+        b = tf.Variable(tf.zeros([labels]), name="bias")
+        # Construct a linear model
+        pred = tf.add(tf.multiply(x, W), b)
+        return pred
+
+
 def logistic_regression_layer(x, y):
     # Set model weights
     W = tf.Variable(tf.truncated_normal([4, 3], stddev=1), name="weight")
@@ -27,7 +50,7 @@ def logistic_regression_layer(x, y):
     train_op = tf.train.AdagradOptimizer(0.01).minimize(loss, global_step=global_step)
 
     # Test trained model
-    label = tf.argmax(y_, 1, name="label")
+    label = tf.argmax(y, 1, name="label")
     prediction = tf.argmax(pred, 1, name="prediction")
     correct_prediction = tf.equal(prediction, label)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
