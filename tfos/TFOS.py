@@ -7,67 +7,41 @@
 """
 
 import os
-import logging
-from datetime import datetime
-import tensorflow as tf
 from collections import namedtuple
+
 from tensorflowonspark import TFCluster
+
+from tfos.graph import Worker
 
 
 class TFOSBase(object):
     input_mode = None
     cluster = None
-    iterator = None
-    ARGS = namedtuple("args", ['batch_size', 'steps', 'model_path', 'rdma'])
+    ARGS = namedtuple("args", ['batch_size', 'steps', 'rdma'])
+    worker = Worker()
 
-    def __init__(self, model_path,  steps=1000, batch_size=1, epochs=1, rdma=0):
+    def __init__(self, steps=1000, batch_size=1, epochs=1, rdma=0, *args, **kwargs):
         """
 
         :param rdma:
         """
-        self.model_path = model_path
         self.steps = steps
         self.batch_size = batch_size
         self.epochs = epochs
         self.rdma = rdma
-        self.args = self.ARGS._make([self.batch_size, self.steps, model_path, self.rdma])
+        self.args = self.ARGS._make([self.batch_size, self.steps, self.rdma])
 
-    def define_model_path(self):
-        self.save_path = os.path.join(self.model_path, 'model')
-        self.inf_path = os.path.join(self.model_path, 'inf')
-        self.pred_path = os.path.join(self.model_path, 'pred')
-        if not os.path.exists(self.save_path):
-            os.makedirs(self.save_path)
-        if not os.path.exists(self.inf_path):
-            os.makedirs(self.inf_path)
-        if not os.path.exists(self.pred_path):
-            os.makedirs(self.pred_path)
-
-    @staticmethod
-    def worker_fun(task_index, cluster):
-        with tf.device(tf.train.replica_device_setter(
-                worker_device="/job:worker/task:%d" % task_index,
-                cluster=cluster)):
-            saver = tf.train.Saver()
-            summary_op = tf.summary.merge_all()
-            init_op = tf.global_variables_initializer()
-
-    @staticmethod
-    def map_fun(args, ctx):
-        job_name = ctx.job_name
-        task_index = ctx.task_index
-
-        # Get TF cluster and server instances
-        cluster, server = ctx.start_cluster_server(1, args.rdma)
-
-        # Create generator for Spark data feed
-        tf_feed = ctx.get_data_feed(args.mode == 'train')
+    def init_tfos(self, main_func, rdd):
+        self.worker.main_func = main_func
+        self.rdd = rdd
+        self.cluster = TFCluster.run(self.sc, self.worker, self.args, self.cluster_size,
+                                     self.num_ps, self.tensorboard, self.input_mode)
 
 
 class TFOS(TFOSBase):
     graph = None
 
-    def __init__(self, sc, cluster_size, num_ps, tensorboard=0, *args, **kwargs):
+    def __init__(self, sc, app_name, cluster_size, num_ps, model_path, tensorboard=0, *args, **kwargs):
         """
 
         :param sc:
@@ -76,21 +50,18 @@ class TFOS(TFOSBase):
         :param tensorboard:
         """
         self.sc = sc
+        self.app_name = app_name
         self.cluster_size = cluster_size
         self.num_ps = num_ps
         self.tensorboard = tensorboard
+        path = os.path.join(model_path, self.app_name)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        self.worker.model_path = path
         super(TFOS, self).__init__(*args, **kwargs)
-
-    def init_cluster(self):
-        cluster = TFCluster.run(self.sc,
-                                self.map_fun, self.args, self.cluster_size, self.num_ps, self.tensorboard, self.input_mode)
-
-    def build_model(self, model, optimizer):
-        print(self.input_mode)
 
     def train(self):
         self.mode = 'train'
-        self.init_cluster()
 
     def inference(self, inf_path):
         self.mode = 'inference'
@@ -101,31 +72,21 @@ class TFOS(TFOSBase):
 
 class TFOSRdd(TFOS):
     input_mode = TFCluster.InputMode.SPARK
+    rdd = None
 
-    def __init__(self, rdd, *args, **kwargs):
-        """learning data from spark rdd
-
-        :param rdd:
-        """
-        self.rdd = rdd
-        super(TFOSRdd, self).__init__(*args, **kwargs)
-
-    def init_data(self):
-        pass
+    def train(self):
+        # self.worker.mode = 'train'
+        self.cluster.train(self.rdd)
+    #
+    # def start(self, main_func, rdd):
+    #     self.worker.main_func = main_func
+    #     cluster = self.init_cluster()
+    #     cluster.train(rdd)
 
 
 class TFOSLocal(TFOS):
     input_mode = TFCluster.InputMode.TENSORFLOW
 
-    def __init__(self,  filepath, fmt, *args, **kwargs):
-        """learning data from file source, read data via tensorflow
-
-        :param filepath: filename path
-        :param fmt: file format, example for csv, txt, bin, tfr, etc
-        """
-        self.filepath = filepath
-        self.fmt = fmt
-        super(TFOSLocal, self).__init__(*args, **kwargs)
-
-    def init_data(self):
+    def start(self, main_func, filepath, fmt):
+        self.worker.main_func = main_func
         pass
