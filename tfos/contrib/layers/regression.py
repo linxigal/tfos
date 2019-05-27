@@ -49,7 +49,7 @@ def logistic_regression_layer(x, y):
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)
     train_op = tf.train.AdagradOptimizer(0.01).minimize(loss, global_step=global_step)
 
-    return pred, loss, train_op
+    return pred, loss, train_op, global_step
 
 
 def linear_regression_layer(x, y):

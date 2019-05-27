@@ -20,10 +20,10 @@ def valid_filename_queue(filename):
     return filename_queue
 
 
-def from_tensor_slices(raw, batch_size, num_workers=None):
+def from_tensor_slices(raw, batch_size, shards=()):
     data = tf.data.Dataset.from_tensor_slices(raw)
-    if num_workers:
-        data = data.shard(num_workers)
+    if shards:
+        data = data.shard(*shards)
     data = data.batch(batch_size)
     return data.make_one_shot_iterator()
 

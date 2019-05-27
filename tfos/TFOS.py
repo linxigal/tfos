@@ -7,11 +7,12 @@
 """
 
 import os
+import logging
 from collections import namedtuple
 
 from tensorflowonspark import TFCluster
 
-from tfos.graph import Worker
+from tfos.worker import Worker
 
 
 class TFOSBase(object):
@@ -23,7 +24,12 @@ class TFOSBase(object):
     def __init__(self, steps=1000, batch_size=1, epochs=1, rdma=0, *args, **kwargs):
         """
 
+        :param steps:
+        :param batch_size:
+        :param epochs:
         :param rdma:
+        :param args:
+        :param kwargs:
         """
         self.steps = steps
         self.batch_size = batch_size
@@ -31,17 +37,9 @@ class TFOSBase(object):
         self.rdma = rdma
         self.args = self.ARGS._make([self.batch_size, self.steps, self.rdma])
 
-    def init_tfos(self, main_func, rdd):
-        self.worker.main_func = main_func
-        self.rdd = rdd
-        self.cluster = TFCluster.run(self.sc, self.worker, self.args, self.cluster_size,
-                                     self.num_ps, self.tensorboard, self.input_mode)
-
 
 class TFOS(TFOSBase):
-    graph = None
-
-    def __init__(self, sc, app_name, cluster_size, num_ps, model_path, tensorboard=0, *args, **kwargs):
+    def __init__(self, sc, main_func, app_name, cluster_size, num_ps, model_path, tensorboard=0, *args, **kwargs):
         """
 
         :param sc:
@@ -50,6 +48,7 @@ class TFOS(TFOSBase):
         :param tensorboard:
         """
         self.sc = sc
+        self.worker.main_func = main_func
         self.app_name = app_name
         self.cluster_size = cluster_size
         self.num_ps = num_ps
@@ -60,33 +59,55 @@ class TFOS(TFOSBase):
         self.worker.model_path = path
         super(TFOS, self).__init__(*args, **kwargs)
 
-    def train(self):
-        self.mode = 'train'
+    def init(self, first):
+        logging.error(first)
+        self.set_worker_dim(first)
+        self.cluster = TFCluster.run(self.sc, self.worker, self.args, self.cluster_size,
+                                     self.num_ps, self.tensorboard, self.input_mode)
 
-    def inference(self, inf_path):
-        self.mode = 'inference'
-
-    def predict(self, pred_path):
-        self.mode = 'predict'
+    def set_worker_dim(self, first):
+        x_dim = len(first[0])
+        self.worker.x_dim = x_dim
 
 
 class TFOSRdd(TFOS):
     input_mode = TFCluster.InputMode.SPARK
     rdd = None
 
-    def train(self):
-        # self.worker.mode = 'train'
-        self.cluster.train(self.rdd)
-    #
-    # def start(self, main_func, rdd):
-    #     self.worker.main_func = main_func
-    #     cluster = self.init_cluster()
-    #     cluster.train(rdd)
+    def train(self, rdd):
+        self.worker.mode = 'train'
+        self.init(rdd.first())
+        self.cluster.train(rdd)
+
+    def inference(self, rdd):
+        self.worker.mode = 'inference'
+        self.init(rdd.first())
+        result_rdd = self.cluster.inference(rdd)
+        logging.error(result_rdd.take(10))
+        result_rdd.saveAsTextFile(self.worker.get_path('inference'))
+
+    def predict(self, rdd):
+        self.worker.mode = 'prediction'
+        self.init(rdd.first())
+        result_rdd = self.cluster.inference(rdd)
+        result_rdd.saveAsTextFile(self.worker.get_path('prediction'))
+        logging.error(result_rdd.take(10))
 
 
 class TFOSLocal(TFOS):
     input_mode = TFCluster.InputMode.TENSORFLOW
 
-    def start(self, main_func, filepath, fmt):
-        self.worker.main_func = main_func
+    def read_data(self, filepath, format='csv'):
         pass
+
+    def train(self):
+        self.worker.mode = 'train'
+        self.init()
+
+    def inference(self):
+        self.worker.mode = 'inference'
+        # self.init()
+
+    def predict(self):
+        self.worker.mode = 'prediction'
+        # self.init()

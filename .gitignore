@@ -103,7 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 .idea/
+.svn/
 output_data/
 tensorboard/
 executor_id
-.svn/
+data/
