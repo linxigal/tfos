@@ -7,6 +7,7 @@
 """
 
 import tensorflow as tf
+from tensorflow.python.ops import variable_scope
 
 
 def perceptron(x, y, n_hidden):
@@ -19,6 +20,7 @@ def perceptron(x, y, n_hidden):
 
 def multilayer_perceptron(x, y, hidden_units):
     x_ = x
-    for n_hidden in hidden_units:
-        x_, _ = perceptron(x_, y, n_hidden)
+    for layer_id, n_hidden in enumerate(hidden_units):
+        with variable_scope.variable_scope(f'hidden_layer_{layer_id}'):
+            x_, _ = perceptron(x_, y, n_hidden)
     return x_, y
