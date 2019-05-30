@@ -44,15 +44,6 @@ def read_csv(filename, dims, label_column, batch_size=1):
     return batch_image, batch_label
 
 
-def read_image_dir(image_dir: str, dims: list):
-    """
-
-    :param image_dir:
-    :param dims:
-    :return: tuple (x, y)
-    """
-
-
 def _read_tfr(filename_queue, dims):
     """ read file by tfrecord format
 
@@ -63,8 +54,8 @@ def _read_tfr(filename_queue, dims):
     reader = tf.TFRecordReader()
     key, value = reader.read(filename_queue)
     features = tf.parse_single_example(value, features={'label': tf.FixedLenFeature([], tf.int64),
-                                                        'img': tf.FixedLenFeature([], tf.string), })
-    img = tf.decode_raw(features["img"], tf.uint8)
+                                                        'image_raw': tf.FixedLenFeature([], tf.string), })
+    img = tf.decode_raw(features["image_raw"], tf.uint8)
     img = tf.reshape(img, dims)
     label = tf.cast(features["label"], tf.int32)
     return img, label
@@ -84,3 +75,22 @@ def read_tfr(filename, dims, batch_size=1):
     batch_image, batch_label = tf.train.shuffle_batch([img, label], batch_size=batch_size, capacity=capacity,
                                                       min_after_dequeue=min_after_dequeue)
     return batch_image, batch_label
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    images, labels = read_tfr(filename='E:\\data\\flower_photos_tfr\\test.tfrecord', dims=[1000, 1000, 3], batch_size=4)
+
+    with tf.Session() as sess:
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=sess)
+        for i in range(10):
+            imgs, ls = sess.run([images, labels])
+            print("batch shape = ", images.shape, "labels = ", ls)
+        print("label = ", ls)
+        for i in range(4):
+            plt.subplot(1, 4, i + 1)
+            plt.axis("off")
+            plt.imshow(imgs[i])
+        plt.show()
+        coord.join(threads)

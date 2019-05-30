@@ -92,6 +92,7 @@ class Worker(object):
             self.start_session(worker_num, task_index, server.target)
 
     def worker(self, cluster, task_index):
+        # Use between-graph replication distribution, difference graph save same parameters to ps
         with tf.device(
                 tf.train.replica_device_setter(worker_device="/job:worker/task:%d" % task_index, cluster=cluster)):
             iterator = self.rdd_iterator()
@@ -112,6 +113,7 @@ class Worker(object):
             self.graph = GRAPH._make([y, pred, accuracy, loss, steps, train_op, saver, summary_op, init_op])
 
     def start_session(self, worker_num, task_index, master):
+        # Asynchronous training
         g = self.graph
         # Create a "supervisor", which oversees the training process and stores model state into HDFS
         checkpoint_dir = self.ctx.absolute_path(self.get_path('checkpoint'))
