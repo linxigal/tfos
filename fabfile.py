@@ -18,7 +18,7 @@ env.python_path = 'export PYTHONPATH=$(pwd)'
 env.virtualenv_workon_prefix = env.source_virtualenvwrapper + ' && workon %s'
 
 env.base_dir = ''  # 项目部署根目录(必须填写)
-env.work_dir = ''  # 项目目录(必须填写)
+env.work_dir = '/home/wjl/gitlab/tfos'  # 项目目录(必须填写)
 env.work_on = ''  # workon 项目名称(必须填写)
 env.web_dir = ''  # web目录
 env.es_dir = ''  # ES 目录
@@ -37,11 +37,11 @@ def hosts(servers, user='default'):
     :return: None
     """
     env.hosts = []
-    remote_hosts = [str(i) for i in range(100, 102)]
+    remote_hosts = [str(i) for i in range(100, 103)]
     for host in servers.split():
         if host in remote_hosts:
-            login_user = 'root' if user == 'default' else user
-            host_ip_user = '{}@192.168.21.{}'.format(login_user, remote_hosts[host])
+            login_user = 'wjl' if user == 'default' else user
+            host_ip_user = '{}@192.168.21.{}'.format(login_user, host)
             env.hosts.append(host_ip_user)
 
 
@@ -51,7 +51,7 @@ def pull(code_dir=None, repo="origin", stash=False, branch='master'):
     """
 
     with cd(code_dir or env.work_dir):
-        run('pwd')
+        # run('pwd')
         run('git status')
         if stash:
             run('git stash')
