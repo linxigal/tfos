@@ -18,7 +18,7 @@ def logistic_regression(graph, x, y):
         # Construct model
         y_ = tf.nn.softmax(tf.matmul(x, W) + b)  # Softmax
         pred = tf.argmax(y, 1, name="prediction")
-        return y_, pred
+        return pred
 
 
 def linear_regression(graph, x, y):

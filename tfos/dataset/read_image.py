@@ -79,7 +79,7 @@ def read_tfr(filename, dims, batch_size=1):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    images, labels = read_tfr(filename='E:\\data\\flower_photos_tfr\\test.tfrecord', dims=[1000, 1000, 3], batch_size=4)
+    images, labels = read_tfr(filename='E:\\data\\flower_photos_tfr\\roses.tfrecord', dims=[240, 240, 3], batch_size=4)
 
     with tf.Session() as sess:
         coord = tf.train.Coordinator()

@@ -59,15 +59,10 @@ class TFOS(TFOSBase):
         self.worker.model_path = path
         super(TFOS, self).__init__(*args, **kwargs)
 
-    def init(self, first):
-        logging.error(first)
-        self.set_worker_dim(first)
+    def init(self, x_dim):
+        self.worker.x_dim = x_dim
         self.cluster = TFCluster.run(self.sc, self.worker, self.args, self.cluster_size,
                                      self.num_ps, self.tensorboard, self.input_mode)
-
-    def set_worker_dim(self, first):
-        x_dim = len(first[0])
-        self.worker.x_dim = x_dim
 
 
 class TFOSRdd(TFOS):
@@ -76,7 +71,7 @@ class TFOSRdd(TFOS):
 
     def train(self, rdd):
         self.worker.mode = 'train'
-        self.init(rdd.first())
+        self.init(len(rdd.first()[0]))
         self.cluster.train(rdd)
 
     def inference(self, rdd):
@@ -97,12 +92,16 @@ class TFOSRdd(TFOS):
 class TFOSLocal(TFOS):
     input_mode = TFCluster.InputMode.TENSORFLOW
 
-    def read_data(self, filepath, format='csv'):
-        pass
+    def __init__(self, *args, **kwargs):
+        model_path = os.path.join(kwargs['model_path'], 'tf')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        kwargs['model_path'] = model_path
+        super(TFOSLocal, self).__init__(*args, **kwargs)
 
-    def train(self):
+    def train(self, x_dim):
         self.worker.mode = 'train'
-        self.init()
+        self.init(x_dim)
 
     def inference(self):
         self.worker.mode = 'inference'

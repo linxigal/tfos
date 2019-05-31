@@ -8,18 +8,7 @@
 
 import tensorflow as tf
 
-COST_FUN = ['mse', 'ce']
 OPTIMIZER = ['sgd', 'adagrad', 'adam']
-
-
-def cost_fun(y, pred, cost='mse'):
-    if cost == 'mse':
-        loss = tf.reduce_sum(tf.pow(pred - y, 2))
-    elif cost == 'ce':
-        loss = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
-    else:
-        raise ValueError('cost function is not exists!')
-    return loss
 
 
 def model_optimizer(loss, opt='adagrad', lr=0.01):
@@ -29,6 +18,6 @@ def model_optimizer(loss, opt='adagrad', lr=0.01):
     elif opt == 'adagrad':
         train_op = tf.train.AdagradOptimizer(lr)
     else:
-        raise ValueError("optimizer parameter is not valid!")
+        raise ValueError(f"optimizer parameter is not valid! choices {'|'.join(OPTIMIZER)}")
     train_op = train_op.minimize(loss, global_step=global_step)
     return train_op

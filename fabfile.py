@@ -45,7 +45,7 @@ def hosts(servers, user='default'):
             env.hosts.append(host_ip_user)
 
 
-def pull(code_dir=None, repo="origin", stash=False, branch='master'):
+def pull(code_dir=None, repo="upstream", stash=False, branch='master'):
     """
     pull线上代码: code_dir代码目录,repo仓库名,stash=False|True,branch=master
     """

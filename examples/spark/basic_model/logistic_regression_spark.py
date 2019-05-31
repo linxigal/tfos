@@ -8,7 +8,6 @@
 
 from sklearn.datasets import load_iris
 from tfos.tfos import TFOSRdd
-from examples.basic_model import *
 
 
 def load_iris_data():
