@@ -9,8 +9,10 @@
 import os
 from collections import namedtuple
 from os.path import join
-from pyspark import SparkConf, SparkContext
+
 import tensorflow as tf
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SQLContext
 
 CURRENT_PATH = os.path.dirname(__file__)
 ROOT_PATH = os.path.dirname(CURRENT_PATH)
@@ -35,7 +37,11 @@ tf.app.flags.DEFINE_integer("readers", 10, "number of reader/enqueue threads per
 tf.app.flags.DEFINE_integer("shuffle_size", 1000, help="size of shuffle buffer")
 sc = SparkContext(conf=SparkConf().setAppName('logistic_regression')
                   .setMaster('spark://192.168.209.128:7077')
+                  # .setMaster('spark://localhost:7077')
                   # .setMaster('local[*]')
                   # .set('spark.py-files ', '/home/wjl/github/tfos')
-                  .set("spark.jars", join(GITHUB, "TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar")))
+                  # .set("spark.jars", join(GITHUB, "TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar"))
+                  )
 ARGS = namedtuple("args", ['batch_size', 'mode', 'steps', 'model_path', 'rdma'])
+
+sqlc = SQLContext(sc)
