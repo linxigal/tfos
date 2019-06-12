@@ -6,13 +6,12 @@
 :File       : test_df2data.py
 """
 
-
 from examples.base import *
 
 
-class DF2Data(Base):
+class TestDF2Inputs(Base):
     def __init__(self, input_table_name, target_field):
-        super(DF2Data, self).__init__()
+        super(TestDF2Inputs, self).__init__()
         self.p('input_table_name', input_table_name)
         self.p('target_field', target_field)
 
@@ -35,4 +34,4 @@ class DF2Data(Base):
 
 
 if __name__ == "__main__":
-    DF2Data()
+    TestDF2Inputs()

@@ -3,3 +3,4 @@ pyspark==2.4.3
 tensorflow==1.13.1
 scikit-learn==0.21.1
 pandas==0.24.2
+tensorflowonspark==1.4.3

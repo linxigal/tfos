@@ -7,7 +7,7 @@
 """
 
 from examples.base.base import Base, inputRDD, outputRDD, print_pretty
-from examples import sqlc
+from examples import sqlc, sc
 
 
-__all__ = ['Base', 'sqlc', 'inputRDD', 'outputRDD', 'print_pretty']
+__all__ = ['Base', 'sc', 'sqlc', 'inputRDD', 'outputRDD', 'print_pretty']
