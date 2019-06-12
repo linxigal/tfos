@@ -30,6 +30,7 @@ class TestDF2Inputs(Base):
         input_rdd = inputRDD(input_table_name)
 
         output_rdd = input_rdd.map(row2list)
+        print(output_rdd.take(2))
         outputRDD('<#zzjzRddName#>', output_rdd)
 
 

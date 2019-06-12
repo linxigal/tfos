@@ -10,10 +10,10 @@ from examples.base import *
 
 
 class TestDense(Base):
-    def __init__(self, inputMutiLayerConfig, output_shape=512, activation='relu', input_shape=(784,)):
+    def __init__(self, inputMutiLayerConfig, output_dims, activation='relu', input_shape=None):
         super(TestDense, self).__init__()
         self.p('inputMutiLayerConfig', inputMutiLayerConfig)
-        self.p('output_shape', output_shape)
+        self.p('output_dims', output_dims)
         self.p('activation', activation)
         self.p('input_shape', input_shape)
 
@@ -27,7 +27,7 @@ class TestDense(Base):
 
         # param = json.loads('<#zzjzParam#>')
         inputMutiLayerConfig = param.get("inputMutiLayerConfig")
-        output_dims = param.get('output_shape')
+        output_dims = param.get('output_dims')
         activation = param.get('activation')
         input_shape = param.get('input_shape')
         model_config = inputRDD(inputMutiLayerConfig)

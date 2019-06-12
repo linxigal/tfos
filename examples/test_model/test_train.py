@@ -115,10 +115,10 @@ class Worker(object):
             self.execute_model()
 
 
-class TestModelTrain(Base):
+class TestTrainModel(Base):
     def __init__(self, input_table_name, model_config, cluster_size, num_ps, batch_size, epochs,
                  steps_per_epoch, model_dir, export_dir):
-        super(TestModelTrain, self).__init__()
+        super(TestTrainModel, self).__init__()
         self.p('input_table_name', input_table_name)
         self.p('model_config', model_config)
         self.p('cluster_size', cluster_size)
@@ -153,5 +153,13 @@ class TestModelTrain(Base):
 
 
 if __name__ == "__main__":
+    from examples import ROOT_PATH
     from examples.test_layer.test_dense import TestDense
+    from examples.test_data.test_read_csv import TestReadCsv
     from examples.test_data.test_df2data import TestDF2Inputs
+
+    filepath = os.path.join(ROOT_PATH, 'output_data', 'data', 'regression_data.csv')
+    TestReadCsv(filepath).run()
+    TestDF2Inputs('<#zzjzRddName#>', '5').run()
+    TestDense("first_layer", 1, input_shape=(5, )).run()
+    # TestTrainModel().run()

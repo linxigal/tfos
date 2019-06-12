@@ -22,14 +22,10 @@ class TestReadCsv(Base):
         # param = json.loads('<#zzjzParam#>')
         filepath = param.get('filepath')
         # rdd = sc.textFile(filepath)
-        rdd = sqlc.read.csv(filepath, header=True)
-        logging.error(rdd.show())
+        df = sqlc.read.csv(filepath, header=True)
         # rdd = rdd.map(lambda x: x.split(','))
         # df = rdd.toDF(['field_{}'.format(i) for i in range(len(rdd.first()))])
-        print("*" * 100)
-        print(rdd.count())
-        rdd.toDF().show()
-        outputRDD('<#zzjzRddName#>', rdd)
+        outputRDD('<#zzjzRddName#>', df.rdd)
 
 
 if __name__ == "__main__":
@@ -37,4 +33,4 @@ if __name__ == "__main__":
     from examples import ROOT_PATH
 
     filepath = os.path.join(ROOT_PATH, 'output_data', 'data', 'regression_data.csv')
-    TestReadCsv(filepath)
+    TestReadCsv(filepath).run()
