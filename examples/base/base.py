@@ -8,35 +8,24 @@
 
 import json
 
-global_params = []
+global_params = {}
 
 
 def inputRDD(name):
-    res = None
-    if global_params:
-        res = global_params[-1][-1]
+    res = global_params.get(name)
     return res
 
 
 def outputRDD(name, rdd):
-    global_params.append((name, rdd))
+    global_params[name] = rdd
 
 
-def print_pretty(index=-1):
-    key, res = '', '{}'
-
-    if global_params:
-        length = len(global_params)
-        if index == -1:
-            index = length
-
-        if index < 0 or index > length:
-            raise ValueError(f"第{index}个索引层不存在！！！")
-
-        key, value = global_params[index - 1]
-        res = json.loads(value.first()._1)
-        res = json.dumps(res, indent=4)
-    print(f"打印层： {key}")
+def print_pretty(name):
+    res = {}
+    data = global_params.get(name)
+    if data:
+        res = json.loads(data.first().model_config)
+    res = json.dumps(res, indent=4)
     print(res)
 
 

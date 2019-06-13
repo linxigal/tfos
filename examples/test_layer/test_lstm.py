@@ -2,34 +2,36 @@
 # -*- coding:utf-8 _*-  
 """
 :Author     :weijinlong
-:Time: 2019/6/11 12:45
-:File       : test_drop.py
+:Time: 2019/6/13 15:28
+:File       : test_lstm.py
 """
 
 from examples.base import *
 
 
-class TestDrop(Base):
-    def __init__(self, inputMutiLayerConfig, rate=0.01):
-        super(TestDrop, self).__init__()
+class TestLSTM(Base):
+    def __init__(self, inputMutiLayerConfig, units):
+        super(TestLSTM, self).__init__()
         self.p('inputMutiLayerConfig', inputMutiLayerConfig)
-        self.p('rate', rate)
+        self.p('units', units)
 
     def run(self):
         param = self.params
 
+        """This layer can only be used as the first layer in a model.
+        """
         from tensorflow.python.keras.models import Sequential
-        from tensorflow.python.keras.layers import Dropout
+        from tensorflow.python.keras.layers import LSTM
 
         # param = json.loads('<#zzjzParam#>')
         inputMutiLayerConfig = param.get("inputMutiLayerConfig")
-        rate = param.get('rate')
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        units = param.get("units")
 
+        model_rdd = inputRDD(inputMutiLayerConfig)
         model_config = get_model_config(model_rdd, False)
         model = Sequential.from_config(model_config)
 
-        model.add(Dropout(rate))
+        model.add(LSTM(units))
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
@@ -37,7 +39,8 @@ class TestDrop(Base):
 
 
 if __name__ == "__main__":
-    TestDrop('<#zzjzRddName#>').run()
-    TestDrop('<#zzjzRddName#>').run()
-    TestDrop('<#zzjzRddName#>').run()
+    from examples.test_layer.test_embedding import TestEmbedding
+
+    TestEmbedding('<#zzjzRddName#>', 1024, 256).run()
+    TestLSTM('<#zzjzRddName#>', 128).run()
     print_pretty('<#zzjzRddName#>')

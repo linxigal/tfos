@@ -10,50 +10,41 @@ from examples.base import *
 
 
 class TestDense(Base):
-    def __init__(self, inputMutiLayerConfig, output_dims, activation='relu', input_shape=None):
+    def __init__(self, inputMutiLayerConfig, output_dim, activation='relu', input_dim=None):
         super(TestDense, self).__init__()
         self.p('inputMutiLayerConfig', inputMutiLayerConfig)
-        self.p('output_dims', output_dims)
+        self.p('output_dim', output_dim)
         self.p('activation', activation)
-        self.p('input_shape', input_shape)
+        self.p('input_dim', input_dim)
 
     def run(self):
         param = self.params
 
-        import json
         from tensorflow.python.keras.models import Sequential
         from tensorflow.python.keras.layers import Dense
-        from pyspark.sql import Row
 
         # param = json.loads('<#zzjzParam#>')
         inputMutiLayerConfig = param.get("inputMutiLayerConfig")
-        output_dims = param.get('output_dims')
+        output_dim = param.get('output_dim')
         activation = param.get('activation')
-        input_shape = param.get('input_shape')
-        model_config = inputRDD(inputMutiLayerConfig)
+        input_dim = param.get('input_dim')
+        model_rdd = inputRDD(inputMutiLayerConfig)
 
-        if model_config:
-            model_config = json.loads(model_config.first()._1)
-        else:
-            model_config = {}
-            if not input_shape:
-                raise ValueError("当前节点处理网络第一层，输入shape不能为空！！！")
-
+        model_config = get_model_config(model_rdd, input_dim=input_dim)
         model = Sequential.from_config(model_config)
 
-        if input_shape:
-            model.add(Dense(output_dims, activation=activation, input_shape=input_shape))
+        if input_dim:
+            model.add(Dense(output_dim, activation=activation, input_dim=input_dim))
         else:
-            model.add(Dense(output_dims, activation=activation))
-        # model.add(Dropout(0.2))
+            model.add(Dense(output_dim, activation=activation))
 
-        outputdf = sqlc.createDataFrame([Row(json.dumps(model.get_config()))])
+        outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
         outputRDD(inputMutiLayerConfig, outputdf)
 
 
 if __name__ == "__main__":
-    TestDense('<#zzjzRddName#>_dense_1').run()
-    TestDense('<#zzjzRddName#>_dense_2').run()
-    TestDense('<#zzjzRddName#>_dense_3').run()
-    print_pretty()
+    TestDense('<#zzjzRddName#>_dense', 512, input_dim=784).run()
+    TestDense('<#zzjzRddName#>_dense', 256).run()
+    TestDense('<#zzjzRddName#>_dense', 10).run()
+    print_pretty('<#zzjzRddName#>_dense')

@@ -21,7 +21,7 @@ class TestDF2Inputs(Base):
         def row2list(row):
             row_dict = row.asDict()
             target = row_dict.pop(target_field)
-            data = [value for key, value in sorted(row_dict.items(), key=lambda k: k[1])]
+            data = [value for key, value in sorted(row_dict.items(), key=lambda k: k[0])]
             return data, target
 
         # param = json.loads('<#zzjzParam#>')
@@ -30,9 +30,14 @@ class TestDF2Inputs(Base):
         input_rdd = inputRDD(input_table_name)
 
         output_rdd = input_rdd.map(row2list)
-        print(output_rdd.take(2))
         outputRDD('<#zzjzRddName#>', output_rdd)
 
 
 if __name__ == "__main__":
-    TestDF2Inputs()
+    import os
+    from examples import ROOT_PATH
+    from examples.test_data.test_read_csv import TestReadCsv
+
+    filepath = os.path.join(ROOT_PATH, 'output_data', 'data', 'regression_data.csv')
+    TestReadCsv(filepath).run()
+    TestDF2Inputs('<#zzjzRddName#>', '5').run()
