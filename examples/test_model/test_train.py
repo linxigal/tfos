@@ -8,13 +8,13 @@
 
 import json
 import os
+import shutil
 
 import numpy as np
-import logging
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import LambdaCallback, TensorBoard, CSVLogger, Callback
-from tensorflow.python.keras.models import Sequential, load_model, save_model
+from tensorflow.python.keras.callbacks import Callback, ModelCheckpoint, CSVLogger
+from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.optimizers import RMSprop
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tensorflow.python.saved_model import tag_constants
@@ -73,22 +73,22 @@ class Worker(object):
         return model
 
     def execute_model(self):
-        saver = tf.train.Saver()
         with tf.Session(self.server.target) as sess:
             K.set_session(sess)
 
-            def save_checkpoint(epoch, logs=None):
-                logging.error(logs)
-                if epoch == 1:
-                    tf.train.write_graph(sess.graph.as_graph_def(), self.model_dir, 'graph.pbtxt')
-                saver.save(sess, os.path.join(self.model_dir, 'model.ckpt'), global_step=epoch * self.steps_per_epoch)
+            # def save_checkpoint(epoch, logs=None):
+            #     logging.error(logs)
+            #     if epoch == 1:
+            #         tf.train.write_graph(sess.graph.as_graph_def(), self.model_dir, 'graph.pbtxt')
+            #     saver.save(sess, os.path.join(self.model_dir, 'model.ckpt'), global_step=epoch * self.steps_per_epoch)
+            # ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
 
-            ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
             csv_logger = CSVLogger(os.path.join(os.path.dirname(self.model_dir), 'train.log'))
             # tb_callback = TensorBoard(log_dir=self.model_dir, histogram_freq=1, write_graph=True, write_images=True)
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            history = LossHistory()
-            callbacks = [ckpt_callback, csv_logger, history] if self.task_index == 0 else None
+            # history = LossHistory()
+            checkpoint = ModelCheckpoint(self.model_dir, monitor='loss', verbose=1, save_weights_only=True, mode='min')
+            callbacks = [checkpoint, csv_logger] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
             self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
@@ -98,27 +98,30 @@ class Worker(object):
                                      # validation_data=(x_test, y_test),
                                      callbacks=callbacks
                                      )
-            print(history.losses)
-
-            if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
-                # save a local Keras model, so we can reload it with an inferencing learning_phase
-                save_model(self.model, "tmp_model")
-
-                # reload the model
-                K.set_learning_phase(False)
-                new_model = load_model("tmp_model")
-
-                # export a saved_model for inferencing
-                builder = saved_model_builder.SavedModelBuilder(self.export_dir)
-                signature = predict_signature_def(inputs={'images': new_model.input},
-                                                  outputs={'scores': new_model.output})
-                builder.add_meta_graph_and_variables(sess=sess,
-                                                     tags=[tag_constants.SERVING],
-                                                     signature_def_map={'predict': signature},
-                                                     clear_devices=True)
-                builder.save()
-
+            self.__save_model(sess)
+            print("@" * 100)
             self.tf_feed.terminate()
+
+    def __save_model(self, sess):
+        if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
+            # save a local Keras model, so we can reload it with an inferencing learning_phase
+            if os.path.exists(self.export_dir):
+                shutil.rmtree(self.export_dir)
+
+            # save_model(self.model, "tmp_model")
+            # # reload the model
+            # K.set_learning_phase(False)
+            # new_model = load_model("tmp_model")
+
+            # export a saved_model for inferencing
+            builder = saved_model_builder.SavedModelBuilder(self.export_dir)
+            signature = predict_signature_def(inputs={'images': self.model.input},
+                                              outputs={'scores': self.model.output})
+            builder.add_meta_graph_and_variables(sess=sess,
+                                                 tags=[tag_constants.SERVING],
+                                                 signature_def_map={'predict': signature},
+                                                 clear_devices=True)
+            builder.save()
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -134,8 +137,8 @@ class Worker(object):
 
 
 class TestTrainModel(Base):
-    def __init__(self, input_table_name, input_model_config, cluster_size, num_ps, batch_size, epochs,
-                 steps_per_epoch, model_dir, export_dir):
+    def __init__(self, input_table_name, input_model_config, cluster_size, num_ps, batch_size, epochs, steps_per_epoch,
+                 model_dir, export_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_table_name', input_table_name)
         self.p('input_model_config', input_model_config)
@@ -143,9 +146,9 @@ class TestTrainModel(Base):
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
+        self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', model_dir)
         self.p('export_dir', export_dir)
-        self.p('steps_per_epoch', steps_per_epoch)
 
     def run(self):
         param = self.params
@@ -185,4 +188,11 @@ if __name__ == "__main__":
     TestDense("<#zzjzRddName#>_dense", 1, input_dim=5).run()
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
     export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
-    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense', 2, 1, 2, 2, 3, model_dir, export_dir).run()
+    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense',
+                   cluster_size=2,
+                   num_ps=1,
+                   batch_size=1,
+                   epochs=5,
+                   steps_per_epoch=5,
+                   model_dir=model_dir,
+                   export_dir=export_dir).run()
