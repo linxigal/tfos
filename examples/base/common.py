@@ -24,5 +24,13 @@ def get_model_config(model_rdd, can_first_layer=True, input_dim=None):
     return model_config
 
 
-def model2df(model):
-    return sqlc.createDataFrame([Row(model_config=json.dumps(model.get_config()))])
+def model2df(model, name='model_config'):
+    data = {name: json.dumps(model.get_config())}
+    return sqlc.createDataFrame([Row(**data)])
+
+
+def dict2df(data, name="model_config"):
+    if not isinstance(data, dict):
+        raise ValueError("function dict2df: parameter instance must be dict!")
+    data = {name: json.dumps(data)}
+    return sqlc.createDataFrame([Row(**data)])

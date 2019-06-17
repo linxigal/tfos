@@ -8,10 +8,10 @@
 
 from examples.base.base import Base, inputRDD, outputRDD, print_pretty
 from examples import sqlc, sc
-from examples.base.common import get_model_config, model2df
+from examples.base.common import get_model_config, model2df, dict2df
 
 __all__ = [
     'sc', 'sqlc',
     'Base', 'inputRDD', 'outputRDD', 'print_pretty',
-    'get_model_config', 'model2df'
+    'get_model_config', 'model2df', 'dict2df'
 ]

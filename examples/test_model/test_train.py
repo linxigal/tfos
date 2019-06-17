@@ -33,7 +33,8 @@ class LossHistory(Callback):
 
 
 class Worker(object):
-    def __init__(self, model_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir):
+    def __init__(self, model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir):
+        self.compile_config = compile_config
         self.model_config = model_config
         self.batch_size = batch_size
         self.epochs = epochs
@@ -66,9 +67,10 @@ class Worker(object):
                 worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
             model = Sequential().from_config(self.model_config)
             model.summary()
-            model.compile(loss='mean_squared_error',
-                          optimizer=RMSprop(),
-                          metrics=['accuracy'])
+            # model.compile(loss='mean_squared_error',
+            #               optimizer=RMSprop(),
+            #               metrics=['accuracy'])
+            model.compile(**self.compile_config)
         self.model = model
         return model
 
@@ -99,7 +101,6 @@ class Worker(object):
                                      callbacks=callbacks
                                      )
             self.__save_model(sess)
-            print("@" * 100)
             self.tf_feed.terminate()
 
     def __save_model(self, sess):
@@ -137,11 +138,14 @@ class Worker(object):
 
 
 class TestTrainModel(Base):
-    def __init__(self, input_table_name, input_model_config, cluster_size, num_ps, batch_size, epochs, steps_per_epoch,
+    def __init__(self, input_rdd_name, input_model_config, input_compile_config, cluster_size, num_ps, batch_size,
+                 epochs,
+                 steps_per_epoch,
                  model_dir, export_dir):
         super(TestTrainModel, self).__init__()
-        self.p('input_table_name', input_table_name)
+        self.p('input_rdd_name', input_rdd_name)
         self.p('input_model_config', input_model_config)
+        self.p('input_compile_config', input_compile_config)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
@@ -154,8 +158,9 @@ class TestTrainModel(Base):
         param = self.params
 
         # param = json.loads('<#zzjzParam#>')
-        input_table_name = param.get('input_table_name')
+        input_rdd_name = param.get('input_rdd_name')
         input_model_config = param.get('input_model_config')
+        input_compile_config = param.get('input_compile_config')
         cluster_size = param.get('cluster_size')
         num_ps = param.get('num_ps')
 
@@ -165,12 +170,17 @@ class TestTrainModel(Base):
         model_dir = param.get('model_dir')
         export_dir = param.get('export_dir')
 
+        # model config
         model_rdd = inputRDD(input_model_config)
         model_config = json.loads(model_rdd.first().model_config)
         print(json.dumps(model_config, indent=4))
-        worker = Worker(model_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
+        # compile config
+        compile_rdd = inputRDD(input_compile_config)
+        compile_config = json.loads(compile_rdd.first().compile_config)
+        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
+        print(json.dumps(compile_config, indent=4))
 
-        input_rdd = inputRDD(input_table_name)
+        input_rdd = inputRDD(input_rdd_name)
 
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd)
@@ -188,7 +198,7 @@ if __name__ == "__main__":
     TestDense("<#zzjzRddName#>_dense", 1, input_dim=5).run()
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
     export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
-    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense',
+    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense', '<#zzjzRddName#>_compile',
                    cluster_size=2,
                    num_ps=1,
                    batch_size=1,
