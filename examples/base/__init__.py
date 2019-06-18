@@ -13,5 +13,5 @@ from examples.base.common import get_model_config, model2df, dict2df
 __all__ = [
     'sc', 'sqlc',
     'Base', 'inputRDD', 'outputRDD', 'print_pretty',
-    'get_model_config', 'model2df', 'dict2df'
+    'get_model_config', 'model2df', 'dict2df',
 ]

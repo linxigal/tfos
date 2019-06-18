@@ -67,16 +67,13 @@ class Worker(object):
                 worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
             model = Sequential().from_config(self.model_config)
             model.summary()
-            # model.compile(loss='mean_squared_error',
-            #               optimizer=RMSprop(),
-            #               metrics=['accuracy'])
             model.compile(**self.compile_config)
         self.model = model
         return model
 
     def execute_model(self):
         with tf.Session(self.server.target) as sess:
-            K.set_session(sess)
+            # K.set_session(sess)
 
             # def save_checkpoint(epoch, logs=None):
             #     logging.error(logs)
@@ -85,22 +82,22 @@ class Worker(object):
             #     saver.save(sess, os.path.join(self.model_dir, 'model.ckpt'), global_step=epoch * self.steps_per_epoch)
             # ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
 
-            csv_logger = CSVLogger(os.path.join(os.path.dirname(self.model_dir), 'train.log'))
+            csv_logger = CSVLogger(os.path.join(os.path.dirname(self.model_dir), f'train_{self.task_index}.log'))
             # tb_callback = TensorBoard(log_dir=self.model_dir, histogram_freq=1, write_graph=True, write_images=True)
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
             # history = LossHistory()
-            checkpoint = ModelCheckpoint(self.model_dir, monitor='loss', verbose=1, save_weights_only=True, mode='min')
-            callbacks = [checkpoint, csv_logger] if self.task_index == 0 else None
+            checkpoint = ModelCheckpoint(self.model_dir, monitor='loss', verbose=2, save_weights_only=True, mode='min')
+            callbacks = [csv_logger] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
             self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
                                      steps_per_epoch=self.steps_per_epoch,
                                      epochs=self.epochs,
-                                     verbose=1,
+                                     verbose=2,
                                      # validation_data=(x_test, y_test),
                                      callbacks=callbacks
                                      )
-            self.__save_model(sess)
+            # self.__save_model(sess)
             self.tf_feed.terminate()
 
     def __save_model(self, sess):
@@ -170,17 +167,24 @@ class TestTrainModel(Base):
         model_dir = param.get('model_dir')
         export_dir = param.get('export_dir')
 
-        # model config
+        # load data
+        assert input_rdd_name, "parameter input_rdd_name cannot empty!"
+        input_rdd = inputRDD(input_rdd_name)
+        assert input_rdd, "cannot get rdd data from previous input layer!"
+        print(input_rdd.take(1))
+        # load model config
+        assert input_model_config, "parameter input_model_config cannot empty!"
         model_rdd = inputRDD(input_model_config)
+        assert model_rdd, "cannot get model config rdd from previous model layer!"
         model_config = json.loads(model_rdd.first().model_config)
         print(json.dumps(model_config, indent=4))
-        # compile config
+        # load compile config
+        assert input_model_config, " parameter input_compile_config cannot empty!"
         compile_rdd = inputRDD(input_compile_config)
+        assert compile_rdd, "cannot get compile config rdd from previous compile layer!"
         compile_config = json.loads(compile_rdd.first().compile_config)
         worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
         print(json.dumps(compile_config, indent=4))
-
-        input_rdd = inputRDD(input_rdd_name)
 
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd)
@@ -191,11 +195,23 @@ if __name__ == "__main__":
     from examples.test_layer.test_dense import TestDense
     from examples.test_data.test_read_csv import TestReadCsv
     from examples.test_data.test_df2data import TestDF2Inputs
+    from examples.test_optimizer.test_optimizer import TestOptimizer
 
+    # load data
     filepath = os.path.join(ROOT_PATH, 'output_data', 'data', 'regression_data.csv')
     TestReadCsv(filepath).run()
     TestDF2Inputs('<#zzjzRddName#>', '5').run()
+
+    # build model
     TestDense("<#zzjzRddName#>_dense", 1, input_dim=5).run()
+
+    # compile model
+    output_compile_name = "<#zzjzRddName#>_compile"
+    TestOptimizer(output_compile_name, 'mse', 'rmsprop',
+                  ['accuracy']
+                  ).run()
+
+    # train model
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
     export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
     TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense', '<#zzjzRddName#>_compile',

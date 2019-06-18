@@ -6,25 +6,7 @@
 :File   : test_read_mnist.py
 """
 
-import numpy as np
-import tensorflow as tf
 from examples.base import *
-
-
-def fromTFExample(bytestr):
-    """Deserializes a TFExample from a byte string"""
-    example = tf.train.Example()
-    example.ParseFromString(bytestr)
-    return example
-
-
-def tfr2numpy(bytestr):
-    example = tf.train.Example()
-    example.ParseFromString(bytestr)
-    features = example.features.feature
-    image = np.array(features['image'].int64_list.value)
-    label = np.array(features['label'].int64_list.value)
-    return image, label
 
 
 class TestReadMnist(Base):
@@ -37,6 +19,17 @@ class TestReadMnist(Base):
     def run(self):
         param = self.params
         output_rdd_name = param.get('output_rdd_name')
+
+        import numpy as np
+        import tensorflow as tf
+
+        def tfr2numpy(bytestr):
+            example = tf.train.Example()
+            example.ParseFromString(bytestr)
+            features = example.features.feature
+            image = np.array(features['image'].int64_list.value)
+            label = np.array(features['label'].int64_list.value)
+            return image, label
 
         # param = json.loads('<#zzjzParam#>')
         input_path = param.get('input_path')
@@ -66,4 +59,6 @@ class TestReadMnist(Base):
 
 
 if __name__ == "__main__":
-    TestReadMnist('<#zzjzRddName#>_mnist_tfr', '/home/wjl/github/tfos/output_data/mnist/tfr/train', 'tfr').run()
+    output_data_name = "<#zzjzRddName#>_mnist_tfr"
+    input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/train"
+    TestReadMnist(output_data_name, input_path, 'tfr').run()

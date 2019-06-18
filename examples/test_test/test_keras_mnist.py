@@ -15,7 +15,7 @@ from examples.test_data.test_read_mnist import TestReadMnist
 from examples.test_model.test_train import TestTrainModel
 from examples.test_optimizer.test_optimizer import TestOptimizer
 
-# read data
+# load data
 output_data_name = "<#zzjzRddName#>_mnist_tfr"
 input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/train"
 TestReadMnist(output_data_name, input_path, 'tfr').run()
@@ -38,8 +38,8 @@ export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
 TestTrainModel(output_data_name, output_model_name, output_compile_name,
                cluster_size=2,
                num_ps=1,
-               batch_size=1,
-               epochs=5,
-               steps_per_epoch=5,
+               batch_size=10,
+               epochs=10,
+               steps_per_epoch=2,
                model_dir=model_dir,
                export_dir=export_dir).run()
