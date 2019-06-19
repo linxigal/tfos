@@ -10,9 +10,9 @@ from examples.base import *
 
 
 class TestActivation(Base):
-    def __init__(self, inputMutiLayerConfig, fun_name='relu'):
+    def __init__(self, input_model_config_name, fun_name='relu'):
         super(TestActivation, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('fun_name', fun_name)
 
     def run(self):
@@ -22,9 +22,9 @@ class TestActivation(Base):
         from tensorflow.python.keras.layers import Activation
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
+        input_model_config_name = param.get("input_model_config_name")
         fun_name = param.get('fun_name')
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        model_rdd = inputRDD(input_model_config_name)
 
         model_config = get_model_config(model_rdd, False)
         model = Sequential.from_config(model_config)
@@ -33,7 +33,7 @@ class TestActivation(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

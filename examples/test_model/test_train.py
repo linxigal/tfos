@@ -135,14 +135,13 @@ class Worker(object):
 
 
 class TestTrainModel(Base):
-    def __init__(self, input_rdd_name, input_model_config, input_compile_config, cluster_size, num_ps, batch_size,
+    def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
                  epochs,
                  steps_per_epoch,
                  model_dir, export_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
-        self.p('input_model_config', input_model_config)
-        self.p('input_compile_config', input_compile_config)
+        self.p('input_config', input_config)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
@@ -156,8 +155,7 @@ class TestTrainModel(Base):
 
         # param = json.loads('<#zzjzParam#>')
         input_rdd_name = param.get('input_rdd_name')
-        input_model_config = param.get('input_model_config')
-        input_compile_config = param.get('input_compile_config')
+        input_config = param.get('input_config')
         cluster_size = param.get('cluster_size')
         num_ps = param.get('num_ps')
 
@@ -172,19 +170,18 @@ class TestTrainModel(Base):
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
         print(input_rdd.take(1))
-        # load model config
-        assert input_model_config, "parameter input_model_config cannot empty!"
-        model_rdd = inputRDD(input_model_config)
-        assert model_rdd, "cannot get model config rdd from previous model layer!"
-        model_config = json.loads(model_rdd.first().model_config)
+        # load config
+        assert input_config, "parameter input_model_config cannot empty!"
+        model_config_rdd = inputRDD(input_config)
+        assert model_config_rdd, "cannot get model config rdd from previous model layer!"
+        columns = model_config_rdd.columns
+        assert "model_config" in columns, "not exists model layer config!"
+        assert "compile_config" in columns, "not exists model compile config!"
+        model_config = json.loads(model_config_rdd.first().model_config)
+        compile_config = json.loads(model_config_rdd.first().compile_config)
         print(json.dumps(model_config, indent=4))
-        # load compile config
-        assert input_model_config, " parameter input_compile_config cannot empty!"
-        compile_rdd = inputRDD(input_compile_config)
-        assert compile_rdd, "cannot get compile config rdd from previous compile layer!"
-        compile_config = json.loads(compile_rdd.first().compile_config)
-        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
         print(json.dumps(compile_config, indent=4))
+        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
 
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd)
@@ -203,10 +200,10 @@ if __name__ == "__main__":
     TestDF2Inputs('<#zzjzRddName#>', '5').run()
 
     # build model
-    TestDense("<#zzjzRddName#>_dense", 1, input_dim=5).run()
+    TestDense("<#zzjzRddName#>_model_config", 1, input_dim=5).run()
 
     # compile model
-    output_compile_name = "<#zzjzRddName#>_compile"
+    output_compile_name = "<#zzjzRddName#>_model_config"
     TestOptimizer(output_compile_name, 'mse', 'rmsprop',
                   ['accuracy']
                   ).run()
@@ -214,7 +211,7 @@ if __name__ == "__main__":
     # train model
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
     export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
-    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_dense', '<#zzjzRddName#>_compile',
+    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_model_config',
                    cluster_size=2,
                    num_ps=1,
                    batch_size=1,

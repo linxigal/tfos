@@ -10,9 +10,9 @@ from examples.base import *
 
 
 class TestFlatten(Base):
-    def __init__(self, inputMutiLayerConfig):
+    def __init__(self, input_model_config_name):
         super(TestFlatten, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
 
     def run(self):
         param = self.params
@@ -21,8 +21,8 @@ class TestFlatten(Base):
         from tensorflow.python.keras.layers import Flatten
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        input_model_config_name = param.get("input_model_config_name")
+        model_rdd = inputRDD(input_model_config_name)
 
         model_config = get_model_config(model_rdd, False)
         model = Sequential.from_config(model_config)
@@ -31,7 +31,7 @@ class TestFlatten(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

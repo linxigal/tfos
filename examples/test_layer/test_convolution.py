@@ -11,9 +11,9 @@ from examples.base import *
 
 
 class TestConvolution2D(Base):
-    def __init__(self, inputMutiLayerConfig, filters, kernel_size, strides=(1, 1), activation='relu', input_shape=None):
+    def __init__(self, input_model_config_name, filters, kernel_size, strides=(1, 1), activation='relu', input_shape=None):
         super(TestConvolution2D, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('filters', filters)
         self.p('kernel_size', kernel_size)
         self.p('strides', strides)
@@ -27,13 +27,13 @@ class TestConvolution2D(Base):
         from tensorflow.python.keras.layers import Convolution2D
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
+        input_model_config_name = param.get("input_model_config_name")
         filters = param.get('filters')
         kernel_size = param.get('kernel_size')
         strides = param.get('strides')
         activation = param.get('activation')
         input_shape = param.get('input_shape')
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        model_rdd = inputRDD(input_model_config_name)
 
         model_config = get_model_config(model_rdd, input_dim=input_shape)
         model = Sequential.from_config(model_config)
@@ -45,7 +45,7 @@ class TestConvolution2D(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

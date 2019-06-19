@@ -10,15 +10,19 @@ from examples.base import *
 
 
 class TestOptimizer(Base):
-    def __init__(self, output_rdd_name, loss, optimizer, metrics=None):
+    def __init__(self, output_rdd_name, input_model_config_name, loss, optimizer, metrics=None):
         super(TestOptimizer, self).__init__()
         self.p('output_rdd_name', output_rdd_name)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('loss', loss)
         self.p('optimizer', optimizer)
         self.p('metrics', metrics)
 
     def run(self):
         param = self.params
+
+        import json
+        from pyspark.sql.functions import lit
 
         valid_loss = ['mean_squared_error', 'mse',
                       'mean_absolute_error', 'mae',
@@ -40,6 +44,7 @@ class TestOptimizer(Base):
 
         # param = json.loads('<#zzjzParam#>')
         output_rdd_name = param.get("output_rdd_name")
+        input_model_config_name = param.get("input_model_config_name")
         loss = param.get("loss")
         optimizer = param.get('optimizer')
         metrics = param.get('metrics')
@@ -65,7 +70,9 @@ class TestOptimizer(Base):
             'metrics': check_metrics if check_metrics else None
         }
 
-        outputdf = dict2df(optimizer_params, 'compile_config')
+        # outputdf = dict2df(optimizer_params, 'compile_config')
+        outputdf = inputRDD(input_model_config_name)
+        outputdf.withColumn("compile_config", lit(json.dumps(optimizer_params)))
         # outputRDD('<#zzjzRddName#>_optimizer', outputdf)
         outputRDD(output_rdd_name, outputdf)
 

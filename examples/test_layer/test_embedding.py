@@ -10,9 +10,9 @@ from examples.base import *
 
 
 class TestEmbedding(Base):
-    def __init__(self, inputMutiLayerConfig, input_dim, output_dim):
+    def __init__(self, input_model_config_name, input_dim, output_dim):
         super(TestEmbedding, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('input_dim', input_dim)
         self.p('output_dim', output_dim)
 
@@ -25,11 +25,11 @@ class TestEmbedding(Base):
         from tensorflow.python.keras.layers import Embedding
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
+        input_model_config_name = param.get("input_model_config_name")
         input_dim = param.get("input_dim")
         output_dim = param.get("output_dim")
 
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        model_rdd = inputRDD(input_model_config_name)
         model_config = get_model_config(model_rdd, input_dim=input_dim)
         model = Sequential.from_config(model_config)
 
@@ -37,7 +37,7 @@ class TestEmbedding(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

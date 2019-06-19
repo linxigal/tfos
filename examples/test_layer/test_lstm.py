@@ -10,9 +10,9 @@ from examples.base import *
 
 
 class TestLSTM(Base):
-    def __init__(self, inputMutiLayerConfig, units):
+    def __init__(self, input_model_config_name, units):
         super(TestLSTM, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('units', units)
 
     def run(self):
@@ -24,10 +24,10 @@ class TestLSTM(Base):
         from tensorflow.python.keras.layers import LSTM
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
+        input_model_config_name = param.get("input_model_config_name")
         units = param.get("units")
 
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        model_rdd = inputRDD(input_model_config_name)
         model_config = get_model_config(model_rdd, False)
         model = Sequential.from_config(model_config)
 
@@ -35,7 +35,7 @@ class TestLSTM(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>_dense', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

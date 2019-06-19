@@ -10,9 +10,9 @@ from examples.base import *
 
 
 class TestMaxPooling2D(Base):
-    def __init__(self, inputMutiLayerConfig, pool_size, strides, padding='valid'):
+    def __init__(self, input_model_config_name, pool_size, strides, padding='valid'):
         super(TestMaxPooling2D, self).__init__()
-        self.p('inputMutiLayerConfig', inputMutiLayerConfig)
+        self.p('input_model_config_name', input_model_config_name)
         self.p('pool_size', pool_size)
         self.p('strides', strides)
         self.p('padding', padding)
@@ -24,11 +24,11 @@ class TestMaxPooling2D(Base):
         from tensorflow.python.keras.layers import MaxPooling2D
 
         # param = json.loads('<#zzjzParam#>')
-        inputMutiLayerConfig = param.get("inputMutiLayerConfig")
+        input_model_config_name = param.get("input_model_config_name")
         pool_size = param.get('pool_size')
         strides = param.get('strides')
         padding = param.get('padding')
-        model_rdd = inputRDD(inputMutiLayerConfig)
+        model_rdd = inputRDD(input_model_config_name)
 
         model_config = get_model_config(model_rdd, False)
         model = Sequential.from_config(model_config)
@@ -37,7 +37,7 @@ class TestMaxPooling2D(Base):
 
         outputdf = model2df(model)
         # outputRDD('<#zzjzRddName#>', outputdf)
-        outputRDD(inputMutiLayerConfig, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":
