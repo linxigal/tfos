@@ -47,6 +47,9 @@ class Worker(object):
         self.server = None
         self.model = None
         self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
+        if not os.path.exists(self.checkpoint_path):
+            os.makedirs(self.checkpoint_path)
+        self.checkpoint_dir = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
         self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
         self.export_path = os.path.join(self.model_dir, "export")
 
@@ -68,33 +71,28 @@ class Worker(object):
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
             model = Sequential().from_config(self.model_config)
+
+            if self.checkpoint_path and self.task_index == 0:
+                model.load_weights(self.checkpoint_path)
+
             model.summary()
             model.compile(**self.compile_config)
         self.model = model
         return model
 
     def execute_model(self):
-        saver = tf.train.Saver()
         with tf.Session(self.server.target) as sess:
-            # K.set_session(sess)
+            sess.run(tf.global_variables_initializer())
 
-            def save_checkpoint(epoch, logs=None):
-                saver.save(sess, os.path.join(self.checkpoint_path, 'model.ckpt'),
-                           global_step=(epoch + 1) * self.steps_per_epoch)
-
-            ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
-
-            # tb_callback = TensorBoard(log_dir=self.tensorboard_path, histogram_freq=1, write_graph=True,
-            #                           write_images=True)
+            tb_callback = TensorBoard(log_dir=self.tensorboard_path, histogram_freq=0, write_grads=True,
+                                      write_images=True)
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            callbacks = [ckpt_callback] if self.task_index == 0 else None
+            callbacks = [tb_callback, tb_callback] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
             self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
                                      steps_per_epoch=self.steps_per_epoch,
                                      epochs=self.epochs,
-                                     verbose=2,
-                                     # validation_data=(x_test, y_test),
                                      callbacks=callbacks
                                      )
             # self.__save_model(sess)
@@ -137,7 +135,7 @@ class Worker(object):
 class TestTrainModel(Base):
     def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
                  epochs,
-                 steps_per_epoch,
+                 # steps_per_epoch,
                  model_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
@@ -146,7 +144,7 @@ class TestTrainModel(Base):
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
-        self.p('steps_per_epoch', steps_per_epoch)
+        # self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', model_dir)
 
     def run(self):
@@ -160,7 +158,7 @@ class TestTrainModel(Base):
 
         batch_size = param.get('batch_size')
         epochs = param.get('epochs')
-        steps_per_epoch = param.get('steps_per_epoch')
+        # steps_per_epoch = param.get('steps_per_epoch')
         model_dir = param.get('model_dir')
 
         # load data
@@ -179,8 +177,9 @@ class TestTrainModel(Base):
         compile_config = json.loads(model_config_rdd.first().compile_config)
         # print(json.dumps(model_config, indent=4))
         # print(json.dumps(compile_config, indent=4))
+        n_samples = input_rdd.count()
+        steps_per_epoch = n_samples // batch_size
         worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir)
-
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd.rdd)
 
@@ -213,5 +212,5 @@ if __name__ == "__main__":
                    num_ps=1,
                    batch_size=1,
                    epochs=5,
-                   steps_per_epoch=5,
+                   # steps_per_epoch=5,
                    model_dir=model_dir).run()

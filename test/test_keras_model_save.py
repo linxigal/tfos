@@ -8,6 +8,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Dropout
 from tensorflow.python.keras.optimizers import RMSprop
@@ -15,10 +16,12 @@ from tensorflow.python.keras.utils import to_categorical
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 from tensorflow.python.keras.callbacks import LambdaCallback, TensorBoard, ModelCheckpoint
 
+
 batch_size = 100
 steps_per_epoch = 10
-mnist_path = 'E:\\data\\mnist'
+# mnist_path = 'E:\\data\\mnist'
 # mnist_path = '/home/wjl/data/mnist'
+mnist_path = '/Users/wjl/data/mnist'
 train_image_path = os.path.join(mnist_path, 'train-images-idx3-ubyte.gz')
 train_label_path = os.path.join(mnist_path, 'train-labels-idx1-ubyte.gz')
 test_image_path = os.path.join(mnist_path, 't10k-images-idx3-ubyte.gz')
@@ -61,6 +64,12 @@ def data_generator(train):
         i = i % max_batch_index
 
 
+model_dir = 'saver_checkpoint'
+tensorboard_dir = 'tensorboard'
+model_checkpoint_dir = 'model_checkpoint'
+ch_dir = os.path.join(model_checkpoint_dir, 'model_checkpoint.hdf5')
+
+
 def build_model():
     model = Sequential()
     model.add(Dense(512, activation='relu', input_shape=(784,)))
@@ -68,6 +77,12 @@ def build_model():
     model.add(Dense(512, activation='relu'))
     model.add(Dropout(0.2))
     model.add(Dense(10, activation='softmax'))
+    if not os.path.exists(model_checkpoint_dir):
+        os.makedirs(model_checkpoint_dir)
+    if tf.train.checkpoint_exists(ch_dir):
+        print(tf.train.latest_checkpoint(model_dir))
+        model.load_weights(ch_dir)
+        print("@" * 100)
 
     model.summary()
 
@@ -76,11 +91,11 @@ def build_model():
                   metrics=['accuracy'])
 
     saver = tf.train.Saver()
-    with tf.Session() as sess:
-        model_dir = 'saver_checkpoint'
-        tensorboard_dir = 'tensorboard'
-        model_checkpoint_dir = 'model_checkpoint'
 
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        # saver = tf.train.import_meta_graph(model_dir, 'model.ckpt-50.meta')
+        # saver.recover_last_checkpoints(model_dir)
         # model_save_dir = "model_save"
         # model_save_weight_dir = "model_save_weight"
         def save_checkpoint(epoch, logs=None):
@@ -91,24 +106,26 @@ def build_model():
             saver.save(sess, os.path.join(model_dir, 'model.ckpt'), global_step=(epoch + 1) * steps_per_epoch)
 
         ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
-        tb_callback = TensorBoard(log_dir=tensorboard_dir, histogram_freq=1, write_graph=True, write_images=True)
-        checkpoint = ModelCheckpoint(os.path.join(model_checkpoint_dir, 'data', 'model_checkpoint.ckpt'),
-                                     monitor='loss',
-                                     verbose=1, save_weights_only=True, save_best_only=True,
-                                     mode='min')
+        tb_callback = TensorBoard(log_dir=tensorboard_dir, histogram_freq=0, write_grads=True, write_images=True)
+        # checkpoint = ModelCheckpoint(os.path.join(model_checkpoint_dir, 'model_checkpoint_{epoch:02d}-{acc:.2f}.ckpt'),
+        checkpoint = ModelCheckpoint(ch_dir,
+                                     monitor='acc',
+                                     verbose=1, save_weights_only=False, save_best_only=False,
+                                     mode='max')
 
         data = model.fit_generator(data_generator(True)
                                    , steps_per_epoch=steps_per_epoch
                                    , epochs=5
                                    , verbose=1
-                                   , validation_data=data_generator(False)
+                                   # , validation_data=data_generator(True)
                                    , validation_steps=100
                                    , callbacks=[
                 # ckpt_callback,
-                tb_callback,
-                # checkpoint
+                # tb_callback,
+                checkpoint
             ]
                                    )
+        K.set_learning_phase(False)
         print(data)
         print(data.epoch)
         print(data.params)
