@@ -10,9 +10,8 @@ from examples.base import *
 
 
 class TestOptimizer(Base):
-    def __init__(self, output_rdd_name, input_model_config_name, loss, optimizer, metrics=None):
+    def __init__(self, input_model_config_name, loss, optimizer, metrics=None):
         super(TestOptimizer, self).__init__()
-        self.p('output_rdd_name', output_rdd_name)
         self.p('input_model_config_name', input_model_config_name)
         self.p('loss', loss)
         self.p('optimizer', optimizer)
@@ -43,7 +42,6 @@ class TestOptimizer(Base):
         valid_metrics = ['accuracy']
 
         # param = json.loads('<#zzjzParam#>')
-        output_rdd_name = param.get("output_rdd_name")
         input_model_config_name = param.get("input_model_config_name")
         loss = param.get("loss")
         optimizer = param.get('optimizer')
@@ -72,9 +70,9 @@ class TestOptimizer(Base):
 
         # outputdf = dict2df(optimizer_params, 'compile_config')
         outputdf = inputRDD(input_model_config_name)
-        outputdf.withColumn("compile_config", lit(json.dumps(optimizer_params)))
+        outputdf = outputdf.withColumn("compile_config", lit(json.dumps(optimizer_params)))
         # outputRDD('<#zzjzRddName#>_optimizer', outputdf)
-        outputRDD(output_rdd_name, outputdf)
+        outputRDD(input_model_config_name, outputdf)
 
 
 if __name__ == "__main__":

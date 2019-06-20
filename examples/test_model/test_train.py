@@ -13,7 +13,7 @@ import shutil
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import Callback, ModelCheckpoint, CSVLogger
+from tensorflow.python.keras.callbacks import Callback, TensorBoard, LambdaCallback
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.optimizers import RMSprop
 from tensorflow.python.saved_model import builder as saved_model_builder
@@ -33,20 +33,22 @@ class LossHistory(Callback):
 
 
 class Worker(object):
-    def __init__(self, model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir):
+    def __init__(self, model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir):
         self.compile_config = compile_config
         self.model_config = model_config
         self.batch_size = batch_size
         self.epochs = epochs
         self.steps_per_epoch = steps_per_epoch
         self.model_dir = model_dir
-        self.export_dir = export_dir
         self.task_index = None
         self.job_name = None
         self.tf_feed = None
         self.cluster = None
         self.server = None
         self.model = None
+        self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
+        self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
+        self.export_path = os.path.join(self.model_dir, "export")
 
     def generate_rdd_data(self, tf_feed):
         while not tf_feed.should_stop():
@@ -54,8 +56,8 @@ class Worker(object):
             inputs = []
             labels = []
             for item in batch:
-                inputs.append(item[0])
-                labels.append(item[1])
+                inputs.append(item.features)
+                labels.append(item.label)
             inputs = np.array(inputs).astype('float32')
             labels = np.array(labels).astype('float32')
             yield (inputs, labels)
@@ -72,22 +74,20 @@ class Worker(object):
         return model
 
     def execute_model(self):
+        saver = tf.train.Saver()
         with tf.Session(self.server.target) as sess:
             # K.set_session(sess)
 
-            # def save_checkpoint(epoch, logs=None):
-            #     logging.error(logs)
-            #     if epoch == 1:
-            #         tf.train.write_graph(sess.graph.as_graph_def(), self.model_dir, 'graph.pbtxt')
-            #     saver.save(sess, os.path.join(self.model_dir, 'model.ckpt'), global_step=epoch * self.steps_per_epoch)
-            # ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
+            def save_checkpoint(epoch, logs=None):
+                saver.save(sess, os.path.join(self.checkpoint_path, 'model.ckpt'),
+                           global_step=(epoch + 1) * self.steps_per_epoch)
 
-            csv_logger = CSVLogger(os.path.join(os.path.dirname(self.model_dir), f'train_{self.task_index}.log'))
-            # tb_callback = TensorBoard(log_dir=self.model_dir, histogram_freq=1, write_graph=True, write_images=True)
+            ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
+
+            # tb_callback = TensorBoard(log_dir=self.tensorboard_path, histogram_freq=1, write_graph=True,
+            #                           write_images=True)
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            # history = LossHistory()
-            checkpoint = ModelCheckpoint(self.model_dir, monitor='loss', verbose=2, save_weights_only=True, mode='min')
-            callbacks = [csv_logger] if self.task_index == 0 else None
+            callbacks = [ckpt_callback] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
             self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
@@ -138,7 +138,7 @@ class TestTrainModel(Base):
     def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
                  epochs,
                  steps_per_epoch,
-                 model_dir, export_dir):
+                 model_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
         self.p('input_config', input_config)
@@ -148,7 +148,6 @@ class TestTrainModel(Base):
         self.p('epochs', epochs)
         self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', model_dir)
-        self.p('export_dir', export_dir)
 
     def run(self):
         param = self.params
@@ -163,13 +162,12 @@ class TestTrainModel(Base):
         epochs = param.get('epochs')
         steps_per_epoch = param.get('steps_per_epoch')
         model_dir = param.get('model_dir')
-        export_dir = param.get('export_dir')
 
         # load data
         assert input_rdd_name, "parameter input_rdd_name cannot empty!"
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
-        print(input_rdd.take(1))
+        # print(input_rdd.rdd.take(1))
         # load config
         assert input_config, "parameter input_model_config cannot empty!"
         model_config_rdd = inputRDD(input_config)
@@ -179,12 +177,12 @@ class TestTrainModel(Base):
         assert "compile_config" in columns, "not exists model compile config!"
         model_config = json.loads(model_config_rdd.first().model_config)
         compile_config = json.loads(model_config_rdd.first().compile_config)
-        print(json.dumps(model_config, indent=4))
-        print(json.dumps(compile_config, indent=4))
-        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir, export_dir)
+        # print(json.dumps(model_config, indent=4))
+        # print(json.dumps(compile_config, indent=4))
+        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir)
 
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
-        cluster.train(input_rdd)
+        cluster.train(input_rdd.rdd)
 
 
 if __name__ == "__main__":
@@ -210,12 +208,10 @@ if __name__ == "__main__":
 
     # train model
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
-    export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
     TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_model_config',
                    cluster_size=2,
                    num_ps=1,
                    batch_size=1,
                    epochs=5,
                    steps_per_epoch=5,
-                   model_dir=model_dir,
-                   export_dir=export_dir).run()
+                   model_dir=model_dir).run()

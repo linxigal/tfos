@@ -29,17 +29,15 @@ TestDrop(output_model_name, 0.2)
 TestDense(output_model_name, 10, activation='softmax').run()
 
 # compile model
-output_compile_name = "<#zzjzRddName#>_compile"
-TestOptimizer(output_compile_name, 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
+output_model_name = "<#zzjzRddName#>_model"
+TestOptimizer(output_model_name, 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
 
 # train model
 model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
-export_dir = os.path.join(ROOT_PATH, 'output_data', "export_dir")
-TestTrainModel(output_data_name, output_model_name, output_compile_name,
+TestTrainModel(output_data_name, output_model_name,
                cluster_size=2,
                num_ps=1,
                batch_size=10,
                epochs=10,
                steps_per_epoch=2,
-               model_dir=model_dir,
-               export_dir=export_dir).run()
+               model_dir=model_dir).run()

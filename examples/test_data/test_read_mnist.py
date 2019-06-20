@@ -20,15 +20,14 @@ class TestReadMnist(Base):
         param = self.params
         output_rdd_name = param.get('output_rdd_name')
 
-        import numpy as np
         import tensorflow as tf
 
         def tfr2numpy(bytestr):
             example = tf.train.Example()
             example.ParseFromString(bytestr)
             features = example.features.feature
-            image = np.array(features['image'].int64_list.value)
-            label = np.array(features['label'].int64_list.value)
+            image = list(features['image'].int64_list.value)
+            label = list(features['label'].int64_list.value)
             return image, label
 
         # param = json.loads('<#zzjzParam#>')
@@ -43,7 +42,7 @@ class TestReadMnist(Base):
             label_rdd = sc.pickleFile(input_labels)
             rdd = image_rdd.zip(label_rdd)
         elif format == 'csv':
-            from_csv = lambda x: [float(s) for s in x.split(',') if len(x) > 0]
+            from_csv = lambda x: [int(s) for s in x.split(',') if len(x) > 0]
             image_rdd = sc.textFile(input_images).map(from_csv)
             label_rdd = sc.textFile(input_labels).map(from_csv)
             rdd = image_rdd.zip(label_rdd)
@@ -54,8 +53,10 @@ class TestReadMnist(Base):
                                           valueClass="org.apache.hadoop.io.NullWritable")
             rdd = tfr_rdd.map(lambda x: tfr2numpy(bytes(x[0])))
 
-        outputRDD(output_rdd_name, rdd)
-        # outputRDD('<#zzjzRddName#>', rdd)
+        output_df = rdd.toDF(['features', 'label'])
+        print(output_df.first())
+        outputRDD(output_rdd_name, output_df)
+        # outputRDD('<#zzjzRddName#>', output_df)
 
 
 if __name__ == "__main__":

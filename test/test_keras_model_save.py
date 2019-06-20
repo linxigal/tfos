@@ -17,15 +17,21 @@ from tensorflow.python.keras.callbacks import LambdaCallback, TensorBoard, Model
 
 batch_size = 100
 steps_per_epoch = 10
+mnist_path = 'E:\\data\\mnist'
+# mnist_path = '/home/wjl/data/mnist'
+train_image_path = os.path.join(mnist_path, 'train-images-idx3-ubyte.gz')
+train_label_path = os.path.join(mnist_path, 'train-labels-idx1-ubyte.gz')
+test_image_path = os.path.join(mnist_path, 't10k-images-idx3-ubyte.gz')
+test_label_path = os.path.join(mnist_path, 't10k-labels-idx1-ubyte.gz')
 
-with open('/Users/wjl/data/mnist/train-images-idx3-ubyte.gz', 'rb') as f:
+with open(train_image_path, 'rb') as f:
     train_images = np.array(mnist.extract_images(f))
-with open('/Users/wjl/data/mnist/train-labels-idx1-ubyte.gz', 'rb') as f:
+with open(train_label_path, 'rb') as f:
     train_labels = np.array(mnist.extract_labels(f, one_hot=True))
 
-with open('/Users/wjl/data/mnist/t10k-images-idx3-ubyte.gz', 'rb') as f:
+with open(test_image_path, 'rb') as f:
     test_images = np.array(mnist.extract_images(f))
-with open('/Users/wjl/data/mnist/t10k-labels-idx1-ubyte.gz', 'rb') as f:
+with open(test_label_path, 'rb') as f:
     test_labels = np.array(mnist.extract_labels(f, one_hot=True))
 
 train_shape = train_images.shape
@@ -73,34 +79,42 @@ def build_model():
     with tf.Session() as sess:
         model_dir = 'saver_checkpoint'
         tensorboard_dir = 'tensorboard'
-        model_checkpoint_dir = 'model_checkpoint/model_checkpoint'
-        model_save_dir = "model_save"
-        model_save_weight_dir = "model_save_weight"
+        model_checkpoint_dir = 'model_checkpoint'
 
+        # model_save_dir = "model_save"
+        # model_save_weight_dir = "model_save_weight"
         def save_checkpoint(epoch, logs=None):
-            if epoch == 1:
-                tf.train.write_graph(sess.graph.as_graph_def(), model_dir, 'graph.pbtxt')
-            saver.save(sess, os.path.join(model_dir, 'model.ckpt'), global_step=epoch * steps_per_epoch)
+            print("*" * 100)
+            print(logs)
+            # if epoch == 1:
+            #     tf.train.write_graph(sess.graph.as_graph_def(), model_dir, 'graph.pbtxt')
+            saver.save(sess, os.path.join(model_dir, 'model.ckpt'), global_step=(epoch + 1) * steps_per_epoch)
 
         ckpt_callback = LambdaCallback(on_epoch_end=save_checkpoint)
         tb_callback = TensorBoard(log_dir=tensorboard_dir, histogram_freq=1, write_graph=True, write_images=True)
-        checkpoint = ModelCheckpoint(model_checkpoint_dir, monitor='loss', verbose=2, save_weights_only=False,
+        checkpoint = ModelCheckpoint(os.path.join(model_checkpoint_dir, 'data', 'model_checkpoint.ckpt'),
+                                     monitor='loss',
+                                     verbose=1, save_weights_only=True, save_best_only=True,
                                      mode='min')
 
-        model.fit_generator(data_generator(True)
-                            , steps_per_epoch=steps_per_epoch
-                            , epochs=5
-                            , verbose=1
-                            , validation_data=data_generator(False)
-                            , validation_steps=100
-                            , callbacks=[
-                ckpt_callback,
+        data = model.fit_generator(data_generator(True)
+                                   , steps_per_epoch=steps_per_epoch
+                                   , epochs=5
+                                   , verbose=1
+                                   , validation_data=data_generator(False)
+                                   , validation_steps=100
+                                   , callbacks=[
+                # ckpt_callback,
                 tb_callback,
                 # checkpoint
             ]
-                            )
-        model.save(model_save_dir)
-        model.save_weights(model_save_weight_dir)
+                                   )
+        print(data)
+        print(data.epoch)
+        print(data.params)
+        print(data.history)
+        # model.save(model_save_dir)
+        # model.save_weights(model_save_weight_dir)
 
 
 if __name__ == "__main__":
