@@ -54,7 +54,6 @@ class TestReadMnist(Base):
             rdd = tfr_rdd.map(lambda x: tfr2numpy(bytes(x[0])))
 
         output_df = rdd.toDF(['features', 'label'])
-        print(output_df.first())
         outputRDD(output_rdd_name, output_df)
         # outputRDD('<#zzjzRddName#>', output_df)
 

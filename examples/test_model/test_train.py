@@ -8,86 +8,26 @@
 
 import json
 import os
-import shutil
 
-import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import Callback, TensorBoard, LambdaCallback
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.optimizers import RMSprop
-from tensorflow.python.saved_model import builder as saved_model_builder
-from tensorflow.python.saved_model import tag_constants
-from tensorflow.python.saved_model.signature_def_utils_impl import predict_signature_def
-from tensorflowonspark import TFCluster, TFNode
+from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 
 from examples.base import *
+from examples.test_model.worker import BaseWorker
+from tensorflowonspark import TFCluster, TFNode
 
 
-class LossHistory(Callback):
-    def on_train_begin(self, logs={}):
-        self.losses = []
-
-    def on_batch_end(self, batch, logs={}):
-        self.losses.append(logs.get('loss'))
-
-
-class Worker(object):
-    def __init__(self, model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir):
-        self.compile_config = compile_config
-        self.model_config = model_config
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.steps_per_epoch = steps_per_epoch
-        self.model_dir = model_dir
-        self.task_index = None
-        self.job_name = None
-        self.tf_feed = None
-        self.cluster = None
-        self.server = None
-        self.model = None
-        self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
-        if not os.path.exists(self.checkpoint_path):
-            os.makedirs(self.checkpoint_path)
-        self.checkpoint_dir = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
-        self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
-        self.export_path = os.path.join(self.model_dir, "export")
-
-    def generate_rdd_data(self, tf_feed):
-        while not tf_feed.should_stop():
-            batch = tf_feed.next_batch(self.batch_size)
-            inputs = []
-            labels = []
-            for item in batch:
-                inputs.append(item.features)
-                labels.append(item.label)
-            inputs = np.array(inputs).astype('float32')
-            labels = np.array(labels).astype('float32')
-            yield (inputs, labels)
-
-    def build_model(self):
-        if self.task_index is None:
-            raise ValueError("task_index cannot None!!!")
-        with tf.device(tf.train.replica_device_setter(
-                worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
-            model = Sequential().from_config(self.model_config)
-
-            if self.checkpoint_path and self.task_index == 0:
-                model.load_weights(self.checkpoint_path)
-
-            model.summary()
-            model.compile(**self.compile_config)
-        self.model = model
-        return model
+class Worker(BaseWorker):
 
     def execute_model(self):
         with tf.Session(self.server.target) as sess:
             sess.run(tf.global_variables_initializer())
 
-            tb_callback = TensorBoard(log_dir=self.tensorboard_path, histogram_freq=0, write_grads=True,
-                                      write_images=True)
+            tb_callback = TensorBoard(log_dir=self.tensorboard_path, write_grads=True, write_images=True)
+            ckpt_callback = ModelCheckpoint(self.checkpoint_file, save_weights_only=True)
+
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            callbacks = [tb_callback, tb_callback] if self.task_index == 0 else None
+            callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
             self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
@@ -97,27 +37,6 @@ class Worker(object):
                                      )
             # self.__save_model(sess)
             self.tf_feed.terminate()
-
-    def __save_model(self, sess):
-        if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
-            # save a local Keras model, so we can reload it with an inferencing learning_phase
-            if os.path.exists(self.export_dir):
-                shutil.rmtree(self.export_dir)
-
-            # save_model(self.model, "tmp_model")
-            # # reload the model
-            # K.set_learning_phase(False)
-            # new_model = load_model("tmp_model")
-
-            # export a saved_model for inferencing
-            builder = saved_model_builder.SavedModelBuilder(self.export_dir)
-            signature = predict_signature_def(inputs={'images': self.model.input},
-                                              outputs={'scores': self.model.output})
-            builder.add_meta_graph_and_variables(sess=sess,
-                                                 tags=[tag_constants.SERVING],
-                                                 signature_def_map={'predict': signature},
-                                                 clear_devices=True)
-            builder.save()
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -135,7 +54,6 @@ class Worker(object):
 class TestTrainModel(Base):
     def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
                  epochs,
-                 # steps_per_epoch,
                  model_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
@@ -178,7 +96,8 @@ class TestTrainModel(Base):
         # print(json.dumps(model_config, indent=4))
         # print(json.dumps(compile_config, indent=4))
         n_samples = input_rdd.count()
-        steps_per_epoch = n_samples // batch_size
+        # steps_per_epoch = n_samples // batch_size
+        steps_per_epoch = 5
         worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir)
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd.rdd)

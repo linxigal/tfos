@@ -10,7 +10,6 @@ import shutil
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tensorflow.python.saved_model import tag_constants
@@ -20,7 +19,7 @@ from tensorflowonspark import TFNode
 
 
 class BaseWorker(object):
-    def __init__(self, model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir):
+    def __init__(self, model_config, compile_config, batch_size=1, epochs=1, steps_per_epoch=1, model_dir=None):
         self.compile_config = compile_config
         self.model_config = model_config
         self.batch_size = batch_size
@@ -36,7 +35,8 @@ class BaseWorker(object):
         self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
         if not os.path.exists(self.checkpoint_path):
             os.makedirs(self.checkpoint_path)
-        self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
+        # self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
+        self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint')
         self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
         self.export_path = os.path.join(self.model_dir, "export")
 
@@ -59,7 +59,7 @@ class BaseWorker(object):
                 worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
             model = Sequential().from_config(self.model_config)
 
-            if self.checkpoint_file and self.task_index == 0:
+            if os.path.exists(self.checkpoint_file) and self.task_index == 0:
                 model.load_weights(self.checkpoint_file)
 
             model.summary()

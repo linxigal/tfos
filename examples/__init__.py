@@ -19,5 +19,5 @@ OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
 if not os.path.exists(OUTPUT_DATA):
     os.makedirs(OUTPUT_DATA)
 
-sc = SparkContext(conf=SparkConf().setAppName('tfos').setMaster('local[2]'))
+sc = SparkContext(conf=SparkConf().setAppName('tfos').setMaster("spark://192.168.2.100:7077"))
 sqlc = SQLContext(sc)
