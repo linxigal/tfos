@@ -30,7 +30,7 @@ class Worker(BaseWorker):
             callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
-            self.model.fit_generator(generator=self.generate_rdd_data(self.tf_feed),
+            self.model.fit_generator(generator=self.generate_rdd_data(),
                                      steps_per_epoch=self.steps_per_epoch,
                                      epochs=self.epochs,
                                      callbacks=callbacks

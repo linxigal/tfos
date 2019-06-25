@@ -53,7 +53,6 @@ def inference_model():
     TestInferenceModel(output_data_name, output_model_name,
                        cluster_size=2,
                        num_ps=1,
-                       batch_size=10,
                        model_dir=model_dir).run()
 
 

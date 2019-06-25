@@ -40,17 +40,17 @@ class BaseWorker(object):
         self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
         self.export_path = os.path.join(self.model_dir, "export")
 
-    def generate_rdd_data(self, tf_feed):
-        while not tf_feed.should_stop():
-            batch = tf_feed.next_batch(self.batch_size)
+    def generate_rdd_data(self):
+        while not self.tf_feed.should_stop():
+            batches = self.tf_feed.next_batch(self.batch_size)
             inputs = []
             labels = []
-            for item in batch:
-                inputs.append(item.features)
-                labels.append(item.label)
+            for row in batches:
+                inputs.append(row.features)
+                labels.append(row.label)
             inputs = np.array(inputs).astype('float32')
             labels = np.array(labels).astype('float32')
-            yield (inputs, labels)
+            yield inputs, labels
 
     def build_model(self):
         if self.task_index is None:

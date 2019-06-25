@@ -5,11 +5,12 @@
 :Time:  :2019/6/18 15:36
 :File   : test_inference.py
 """
-import os
 import json
+
 import tensorflow as tf
-from tensorflowonspark import TFCluster
 from pyspark.sql import Row
+from tensorflowonspark import TFCluster
+
 from examples.base import *
 from examples.test_model.worker import BaseWorker
 
@@ -17,24 +18,22 @@ from examples.test_model.worker import BaseWorker
 class Worker(BaseWorker):
     def execute_model(self):
         with tf.Session(self.server.target) as sess:
-            # sess.run(tf.global_variables_initializer())
-            results = self.model.evaluate_generator(generator=self.generate_rdd_data(self.tf_feed),
-                                                    steps=self.steps_per_epoch)
-            # numpy.float32 cannot convert to DataFrame
-            self.tf_feed.batch_results([Row(loss=float(results[0]), acc=float(results[1]))])
-            # self.tf_feed.batch_results(results)
+            for i in range(self.steps_per_epoch):
+                x, y = next(self.generate_rdd_data())
+                result = self.model.evaluate(x, y, self.batch_size)
+                # numpy.float32 cannot convert to DataFrame
+                self.tf_feed.batch_results([Row(loss=float(result[0]), acc=float(result[1]))])
+                # self.tf_feed.batch_results([result])
             self.tf_feed.terminate()
 
 
 class TestInferenceModel(Base):
-    def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
-                 model_dir):
+    def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, model_dir):
         super(TestInferenceModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
         self.p('input_config', input_config)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
-        self.p('batch_size', batch_size)
         self.p('model_dir', model_dir)
 
     def run(self):
@@ -46,10 +45,7 @@ class TestInferenceModel(Base):
         cluster_size = param.get('cluster_size')
         num_ps = param.get('num_ps')
 
-        batch_size = param.get('batch_size')
         model_dir = param.get('model_dir')
-        from pyspark.sql import SparkSession
-        spark = SparkSession(sc)
 
         # load data
         assert input_rdd_name, "parameter input_rdd_name cannot empty!"
@@ -64,11 +60,11 @@ class TestInferenceModel(Base):
         model_config = json.loads(model_config_rdd.first().model_config)
         compile_config = json.loads(model_config_rdd.first().compile_config)
         n_samples = input_rdd.count()
-        # steps_per_epoch = n_samples // batch_size
-        steps_per_epoch = 5
-        worker = Worker(model_config, compile_config, batch_size, steps_per_epoch=steps_per_epoch, model_dir=model_dir)
+        steps_per_epoch = n_samples
+        # steps_per_epoch = 5
+        worker = Worker(model_config, compile_config, steps_per_epoch=steps_per_epoch, model_dir=model_dir)
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         output_rdd = cluster.inference(input_rdd.rdd)
-        print(type(output_rdd))
-        print(output_rdd.take(1))
+        output_rdd = output_rdd.toDF()
+        output_rdd.show()
         outputRDD('<#zzjzRddName#>', output_rdd)
