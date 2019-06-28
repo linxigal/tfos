@@ -35,20 +35,20 @@ model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
 
 
 def train_model():
-    # input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/train"
-    input_path = "/Users/wjl/github/tfos/output_data/mnist/tfr/train"
+    input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/train"
+    # input_path = "/Users/wjl/github/tfos/output_data/mnist/tfr/train"
     TestReadMnist(output_data_name, input_path, 'tfr').run()
     TestTrainModel(output_data_name, output_model_name,
                    cluster_size=2,
                    num_ps=1,
                    batch_size=10,
-                   epochs=10,
+                   epochs=1,
                    model_dir=model_dir).run()
 
 
 def inference_model():
-    # input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/test"
-    input_path = "/Users/wjl/github/tfos/output_data/mnist/tfr/test"
+    input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/test"
+    # input_path = "/Users/wjl/github/tfos/output_data/mnist/tfr/test"
     TestReadMnist(output_data_name, input_path, 'tfr').run()
     TestInferenceModel(output_data_name, output_model_name,
                        cluster_size=2,

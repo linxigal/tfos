@@ -34,7 +34,7 @@ class TestInferenceModel(Base):
         self.p('input_config', input_config)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
-        self.p('model_dir', model_dir)
+        self.p('model_dir', [{"path":model_dir}])
 
     def run(self):
         param = self.params
@@ -45,7 +45,7 @@ class TestInferenceModel(Base):
         cluster_size = param.get('cluster_size')
         num_ps = param.get('num_ps')
 
-        model_dir = param.get('model_dir')
+        model_dir = param.get('model_dir')[0]['path']
 
         # load data
         assert input_rdd_name, "parameter input_rdd_name cannot empty!"

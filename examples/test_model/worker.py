@@ -11,15 +11,12 @@ import shutil
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.saved_model import builder as saved_model_builder
-from tensorflow.python.saved_model import tag_constants
-from tensorflow.python.saved_model.signature_def_utils_impl import predict_signature_def
-
 from tensorflowonspark import TFNode
 
 
 class BaseWorker(object):
-    def __init__(self, model_config, compile_config, batch_size=1, epochs=1, steps_per_epoch=1, model_dir=None):
+    def __init__(self, model_config=None, compile_config=None, batch_size=1, epochs=1, steps_per_epoch=1,
+                 model_dir=None):
         self.compile_config = compile_config
         self.model_config = model_config
         self.batch_size = batch_size
@@ -37,8 +34,8 @@ class BaseWorker(object):
             os.makedirs(self.checkpoint_path)
         # self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
         self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint')
-        self.tensorboard_path = os.path.join(self.model_dir, "tensorboard")
-        self.export_path = os.path.join(self.model_dir, "export")
+        self.tensorboard_dir = os.path.join(self.model_dir, "tensorboard")
+        self.export_dir = os.path.join(self.model_dir, "export")
 
     def generate_rdd_data(self):
         while not self.tf_feed.should_stop():
@@ -62,34 +59,13 @@ class BaseWorker(object):
             if os.path.exists(self.checkpoint_file) and self.task_index == 0:
                 model.load_weights(self.checkpoint_file)
 
-            model.summary()
             model.compile(**self.compile_config)
+            model.summary()
         self.model = model
         return model
 
     def execute_model(self):
         raise NotImplementedError
-
-    def __save_model(self, sess):
-        if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
-            # save a local Keras model, so we can reload it with an inferencing learning_phase
-            if os.path.exists(self.export_dir):
-                shutil.rmtree(self.export_dir)
-
-            # save_model(self.model, "tmp_model")
-            # # reload the model
-            # K.set_learning_phase(False)
-            # new_model = load_model("tmp_model")
-
-            # export a saved_model for inferencing
-            builder = saved_model_builder.SavedModelBuilder(self.export_dir)
-            signature = predict_signature_def(inputs={'images': self.model.input},
-                                              outputs={'scores': self.model.output})
-            builder.add_meta_graph_and_variables(sess=sess,
-                                                 tags=[tag_constants.SERVING],
-                                                 signature_def_map={'predict': signature},
-                                                 clear_devices=True)
-            builder.save()
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index

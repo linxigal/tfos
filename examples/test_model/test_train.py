@@ -18,13 +18,13 @@ from tensorflowonspark import TFCluster, TFNode
 
 
 class Worker(BaseWorker):
-
     def execute_model(self):
         with tf.Session(self.server.target) as sess:
             sess.run(tf.global_variables_initializer())
 
-            tb_callback = TensorBoard(log_dir=self.tensorboard_path, write_grads=True, write_images=True)
-            ckpt_callback = ModelCheckpoint(self.checkpoint_file, save_weights_only=True)
+            tb_callback = TensorBoard(log_dir=self.tensorboard_dir, write_grads=True, write_images=True)
+            ckpt_callback = ModelCheckpoint(self.checkpoint_file, monitor='loss', save_weights_only=True,
+                                            save_best_only=True)
 
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
             callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
@@ -35,8 +35,9 @@ class Worker(BaseWorker):
                                      epochs=self.epochs,
                                      callbacks=callbacks
                                      )
-            # self.__save_model(sess)
             self.tf_feed.terminate()
+            if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
+                self.model.save(self.export_dir)
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -52,9 +53,7 @@ class Worker(BaseWorker):
 
 
 class TestTrainModel(Base):
-    def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size,
-                 epochs,
-                 model_dir):
+    def __init__(self, input_rdd_name, input_config, cluster_size, num_ps, batch_size, epochs, model_dir):
         super(TestTrainModel, self).__init__()
         self.p('input_rdd_name', input_rdd_name)
         self.p('input_config', input_config)
@@ -63,7 +62,7 @@ class TestTrainModel(Base):
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
         # self.p('steps_per_epoch', steps_per_epoch)
-        self.p('model_dir', model_dir)
+        self.p('model_dir', [{"path":model_dir}])
 
     def run(self):
         param = self.params
@@ -77,13 +76,12 @@ class TestTrainModel(Base):
         batch_size = param.get('batch_size')
         epochs = param.get('epochs')
         # steps_per_epoch = param.get('steps_per_epoch')
-        model_dir = param.get('model_dir')
+        model_dir = param.get('model_dir')[0]['path']
 
         # load data
         assert input_rdd_name, "parameter input_rdd_name cannot empty!"
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
-        # print(input_rdd.rdd.take(1))
         # load config
         assert input_config, "parameter input_model_config cannot empty!"
         model_config_rdd = inputRDD(input_config)
@@ -93,8 +91,6 @@ class TestTrainModel(Base):
         assert "compile_config" in columns, "not exists model compile config!"
         model_config = json.loads(model_config_rdd.first().model_config)
         compile_config = json.loads(model_config_rdd.first().compile_config)
-        # print(json.dumps(model_config, indent=4))
-        # print(json.dumps(compile_config, indent=4))
         n_samples = input_rdd.count()
         # steps_per_epoch = n_samples // batch_size
         steps_per_epoch = 5
@@ -131,5 +127,4 @@ if __name__ == "__main__":
                    num_ps=1,
                    batch_size=1,
                    epochs=5,
-                   # steps_per_epoch=5,
                    model_dir=model_dir).run()

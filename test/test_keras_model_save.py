@@ -6,6 +6,7 @@
 """
 
 import os
+import shutil
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
@@ -15,12 +16,14 @@ from tensorflow.python.keras.optimizers import RMSprop
 from tensorflow.python.keras.utils import to_categorical
 from tensorflow.contrib.learn.python.learn.datasets import mnist
 from tensorflow.python.keras.callbacks import LambdaCallback, TensorBoard, ModelCheckpoint
-
+from tensorflow.python.saved_model import builder as saved_model_builder
+from tensorflow.python.saved_model import tag_constants
+from tensorflow.python.saved_model.signature_def_utils_impl import predict_signature_def
 
 batch_size = 100
 steps_per_epoch = 10
 # mnist_path = 'E:\\data\\mnist'
-# mnist_path = '/home/wjl/data/mnist'
+mnist_path = '/home/wjl/data/mnist'
 mnist_path = '/Users/wjl/data/mnist'
 train_image_path = os.path.join(mnist_path, 'train-images-idx3-ubyte.gz')
 train_label_path = os.path.join(mnist_path, 'train-labels-idx1-ubyte.gz')
@@ -90,17 +93,21 @@ def build_model():
                   optimizer=RMSprop(),
                   metrics=['accuracy'])
 
+
+model = None
+
+
+def execute_model():
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+
         # saver = tf.train.import_meta_graph(model_dir, 'model.ckpt-50.meta')
         # saver.recover_last_checkpoints(model_dir)
         # model_save_dir = "model_save"
         # model_save_weight_dir = "model_save_weight"
         def save_checkpoint(epoch, logs=None):
-            print("*" * 100)
-            print(logs)
             # if epoch == 1:
             #     tf.train.write_graph(sess.graph.as_graph_def(), model_dir, 'graph.pbtxt')
             saver.save(sess, os.path.join(model_dir, 'model.ckpt'), global_step=(epoch + 1) * steps_per_epoch)
@@ -122,7 +129,7 @@ def build_model():
                                    , callbacks=[
                 # ckpt_callback,
                 # tb_callback,
-                checkpoint
+                # checkpoint
             ]
                                    )
         K.set_learning_phase(False)
@@ -132,7 +139,32 @@ def build_model():
         print(data.history)
         # model.save(model_save_dir)
         # model.save_weights(model_save_weight_dir)
+        save_model(sess)
+
+
+export_dir = "export_dir"
+
+
+def save_model(sess):
+    if os.path.exists(export_dir):
+        shutil.rmtree(export_dir)
+
+    # save_model(self.model, "tmp_model")
+    # # reload the model
+    # K.set_learning_phase(False)
+    # new_model = load_model("tmp_model")
+
+    # export a saved_model for inferencing
+    builder = saved_model_builder.SavedModelBuilder(export_dir)
+    signature = predict_signature_def(inputs={'images': model.input},
+                                      outputs={'scores': model.output})
+    builder.add_meta_graph_and_variables(sess=sess,
+                                         tags=[tag_constants.SERVING],
+                                         signature_def_map={'predict': signature},
+                                         clear_devices=True)
+    builder.save()
 
 
 if __name__ == "__main__":
     build_model()
+    execute_model()
