@@ -35,9 +35,9 @@ class Worker(BaseWorker):
                                      epochs=self.epochs,
                                      callbacks=callbacks
                                      )
+            if self.save_model_file and self.job_name == 'worker' and self.task_index == 0:
+                self.model.save(self.save_model_file)
             self.tf_feed.terminate()
-            if self.export_dir and self.job_name == 'worker' and self.task_index == 0:
-                self.model.save(self.export_dir)
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -62,7 +62,7 @@ class TestTrainModel(Base):
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
         # self.p('steps_per_epoch', steps_per_epoch)
-        self.p('model_dir', [{"path":model_dir}])
+        self.p('model_dir', [{"path": model_dir}])
 
     def run(self):
         param = self.params
@@ -75,14 +75,13 @@ class TestTrainModel(Base):
 
         batch_size = param.get('batch_size')
         epochs = param.get('epochs')
-        # steps_per_epoch = param.get('steps_per_epoch')
         model_dir = param.get('model_dir')[0]['path']
 
         # load data
         assert input_rdd_name, "parameter input_rdd_name cannot empty!"
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
-        # load config
+        # load model
         assert input_config, "parameter input_model_config cannot empty!"
         model_config_rdd = inputRDD(input_config)
         assert model_config_rdd, "cannot get model config rdd from previous model layer!"
@@ -92,8 +91,8 @@ class TestTrainModel(Base):
         model_config = json.loads(model_config_rdd.first().model_config)
         compile_config = json.loads(model_config_rdd.first().compile_config)
         n_samples = input_rdd.count()
-        # steps_per_epoch = n_samples // batch_size
-        steps_per_epoch = 5
+        steps_per_epoch = n_samples // batch_size
+        # steps_per_epoch = 1
         worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir)
         cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
         cluster.train(input_rdd.rdd)

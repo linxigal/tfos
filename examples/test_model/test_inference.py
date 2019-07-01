@@ -6,18 +6,28 @@
 :File   : test_inference.py
 """
 import json
+import os
 
 import tensorflow as tf
 from pyspark.sql import Row
 from tensorflowonspark import TFCluster
+from tensorflow.python.keras.models import load_model
 
 from examples.base import *
 from examples.test_model.worker import BaseWorker
 
 
 class Worker(BaseWorker):
+    def build_model(self):
+        pass
+
     def execute_model(self):
         with tf.Session(self.server.target) as sess:
+            if os.path.exists(self.save_model_file) and self.task_index == 0:
+                self.model = load_model(self.save_model_file)
+            else:
+                raise ValueError("model train result file is not exists!!!")
+
             for i in range(self.steps_per_epoch):
                 x, y = next(self.generate_rdd_data())
                 result = self.model.evaluate(x, y, self.batch_size)
@@ -34,7 +44,7 @@ class TestInferenceModel(Base):
         self.p('input_config', input_config)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
-        self.p('model_dir', [{"path":model_dir}])
+        self.p('model_dir', [{"path": model_dir}])
 
     def run(self):
         param = self.params

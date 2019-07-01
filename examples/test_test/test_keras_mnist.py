@@ -41,8 +41,8 @@ def train_model():
     TestTrainModel(output_data_name, output_model_name,
                    cluster_size=2,
                    num_ps=1,
-                   batch_size=10,
-                   epochs=1,
+                   batch_size=1000,
+                   epochs=100,
                    model_dir=model_dir).run()
 
 
@@ -57,5 +57,5 @@ def inference_model():
 
 
 if __name__ == "__main__":
-    # train_model()
-    inference_model()
+    train_model()
+    # inference_model()

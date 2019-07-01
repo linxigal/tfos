@@ -32,10 +32,13 @@ class BaseWorker(object):
         self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
         if not os.path.exists(self.checkpoint_path):
             os.makedirs(self.checkpoint_path)
-        # self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.hdf5')
-        self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint')
+        # self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.h5')
+        self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint_{epoch}')
         self.tensorboard_dir = os.path.join(self.model_dir, "tensorboard")
-        self.export_dir = os.path.join(self.model_dir, "export")
+        self.save_dir = os.path.join(self.model_dir, "save_model")
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+        self.save_model_file = os.path.join(self.save_dir, 'model.h5')
 
     def generate_rdd_data(self):
         while not self.tf_feed.should_stop():
@@ -54,7 +57,7 @@ class BaseWorker(object):
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:%d" % self.task_index, cluster=self.cluster)):
-            model = Sequential().from_config(self.model_config)
+            model = Sequential.from_config(self.model_config)
 
             if os.path.exists(self.checkpoint_file) and self.task_index == 0:
                 model.load_weights(self.checkpoint_file)
