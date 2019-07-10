@@ -2,7 +2,7 @@
 # -*- coding:utf-8 _*-
 """
 :Author     :weijinlong
-:Time: 2019/5/22 16:51
+:Time:       2019/5/22 16:51
 :File       : __init__.py.py
 """
 

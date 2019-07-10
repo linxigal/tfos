@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 from tfos import VERSION
 
 __version__ = VERSION
-__versionstr__ = '.'.join(map(str, VERSION))
+__version_str__ = '.'.join(map(str, VERSION))
 
 PATH = dirname(__file__)
 f = open(join(PATH, 'README.md'))
@@ -24,7 +24,7 @@ setup(
     license="",
     url="https://gitlab.zzjz.com/tfos/tfos",
     long_description=long_description,
-    version=__versionstr__,
+    version=__version_str__,
     author="weijinlong",
     author_email="",
     packages=find_packages(

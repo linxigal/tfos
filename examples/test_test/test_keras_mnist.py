@@ -42,7 +42,7 @@ def train_model():
                    cluster_size=2,
                    num_ps=1,
                    batch_size=1000,
-                   epochs=100,
+                   epochs=5,
                    model_dir=model_dir).run()
 
 
