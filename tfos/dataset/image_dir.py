@@ -51,7 +51,7 @@ class ReadImage(object):
         file_pattern = os.path.join(image_dir, 'part-*')
 
         ds = tf.data.Dataset.list_files(file_pattern)
-        ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
+        # ds = ds.shard(num_workers, task_index).repeat(args.epochs).shuffle(args.shuffle_size)
         if self.args.format == 'csv2':
             ds = ds.interleave(tf.data.TextLineDataset, cycle_length=self.args.readers, block_length=1)
             parse_fn = self._parse_csv

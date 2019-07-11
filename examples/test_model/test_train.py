@@ -6,50 +6,8 @@
 :File       : test_model_train.py
 """
 
-import json
 import os
-
-import tensorflow as tf
-from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
-
 from examples.base import *
-from examples.test_model.worker import BaseWorker
-from tensorflowonspark import TFCluster, TFNode
-
-
-class Worker(BaseWorker):
-    def execute_model(self):
-        with tf.Session(self.server.target) as sess:
-            sess.run(tf.global_variables_initializer())
-
-            tb_callback = TensorBoard(log_dir=self.tensorboard_dir, write_grads=True, write_images=True)
-            ckpt_callback = ModelCheckpoint(self.checkpoint_file, monitor='loss', save_weights_only=True,
-                                            save_best_only=True)
-
-            # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
-
-            # train on data read from a generator which is producing data from a Spark RDD
-            self.model.fit_generator(generator=self.generate_rdd_data(),
-                                     steps_per_epoch=self.steps_per_epoch,
-                                     epochs=self.epochs,
-                                     callbacks=callbacks
-                                     )
-            if self.save_model_file and self.job_name == 'worker' and self.task_index == 0:
-                self.model.save(self.save_model_file)
-            self.tf_feed.terminate()
-
-    def __call__(self, args, ctx):
-        self.task_index = ctx.task_index
-        self.job_name = ctx.job_name
-        self.cluster, self.server = TFNode.start_cluster_server(ctx)
-        self.tf_feed = TFNode.DataFeed(ctx.mgr)
-
-        if ctx.job_name == "ps":
-            self.server.join()
-        elif ctx.job_name == "worker":
-            self.build_model()
-            self.execute_model()
 
 
 class TestTrainModel(Base):
@@ -67,14 +25,15 @@ class TestTrainModel(Base):
     def run(self):
         param = self.params
 
+        from tfos import TFOS
+
         # param = json.loads('<#zzjzParam#>')
         input_rdd_name = param.get('input_rdd_name')
         input_config = param.get('input_config')
-        cluster_size = param.get('cluster_size')
-        num_ps = param.get('num_ps')
-
-        batch_size = param.get('batch_size')
-        epochs = param.get('epochs')
+        cluster_size = int(param.get('cluster_size'))
+        num_ps = int(param.get('num_ps'))
+        batch_size = int(param.get('batch_size'))
+        epochs = int(param.get('epochs'))
         model_dir = param.get('model_dir')[0]['path']
 
         # load data
@@ -83,45 +42,29 @@ class TestTrainModel(Base):
         assert input_rdd, "cannot get rdd data from previous input layer!"
         # load model
         assert input_config, "parameter input_model_config cannot empty!"
-        model_config_rdd = inputRDD(input_config)
-        assert model_config_rdd, "cannot get model config rdd from previous model layer!"
-        columns = model_config_rdd.columns
-        assert "model_config" in columns, "not exists model layer config!"
-        assert "compile_config" in columns, "not exists model compile config!"
-        model_config = json.loads(model_config_rdd.first().model_config)
-        compile_config = json.loads(model_config_rdd.first().compile_config)
-        n_samples = input_rdd.count()
-        steps_per_epoch = n_samples // batch_size
-        # steps_per_epoch = 1
-        worker = Worker(model_config, compile_config, batch_size, epochs, steps_per_epoch, model_dir)
-        cluster = TFCluster.run(sc, worker, None, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK)
-        cluster.train(input_rdd.rdd)
+        model_rdd = inputRDD(input_config)
+        assert model_rdd, "cannot get model config rdd from previous model layer!"
+        TFOS(sc).train(input_rdd, model_rdd, cluster_size, num_ps, batch_size, epochs, model_dir)
 
 
 if __name__ == "__main__":
     from examples import ROOT_PATH
-    from examples.test_layer.test_dense import TestDense
-    from examples.test_data.test_read_csv import TestReadCsv
-    from examples.test_data.test_df2data import TestDF2Inputs
-    from examples.test_optimizer.test_optimizer import TestOptimizer
+    from examples.test_layer import TestDense
+    from examples.test_data import TestReadCsv, TestDF2Inputs
+    from examples.test_optimizer import TestOptimizer
 
     # load data
     filepath = os.path.join(ROOT_PATH, 'output_data', 'data', 'regression_data.csv')
     TestReadCsv(filepath).run()
-    TestDF2Inputs('<#zzjzRddName#>', '5').run()
+    TestDF2Inputs('<#zzjzRddName#>_data', '5').run()
 
     # build model
-    TestDense("<#zzjzRddName#>_model_config", 1, input_dim=5).run()
-
+    TestDense(lrn(), 1, input_dim=5).run()
     # compile model
-    output_compile_name = "<#zzjzRddName#>_model_config"
-    TestOptimizer(output_compile_name, 'mse', 'rmsprop',
-                  ['accuracy']
-                  ).run()
-
+    TestOptimizer(lrn(), 'mse', 'rmsprop', ['accuracy']).run()
     # train model
     model_dir = os.path.join(ROOT_PATH, 'output_data', "model_dir")
-    TestTrainModel('<#zzjzRddName#>', '<#zzjzRddName#>_model_config',
+    TestTrainModel('<#zzjzRddName#>_data', lrn(),
                    cluster_size=2,
                    num_ps=1,
                    batch_size=1,

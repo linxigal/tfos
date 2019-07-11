@@ -25,7 +25,7 @@ class TestReadCsv(Base):
         df = sqlc.read.csv(filepath, header=True)
         # rdd = rdd.map(lambda x: x.split(','))
         # df = rdd.toDF(['field_{}'.format(i) for i in range(len(rdd.first()))])
-        outputRDD('<#zzjzRddName#>', df.rdd)
+        outputRDD('<#zzjzRddName#>_data', df.rdd)
 
 
 if __name__ == "__main__":

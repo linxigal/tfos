@@ -20,17 +20,17 @@ class TestDF2Inputs(Base):
 
         def row2list(row):
             row_dict = row.asDict()
-            target = row_dict.pop(target_field)
-            data = [value for key, value in sorted(row_dict.items(), key=lambda k: k[0])]
-            return data, target
+            label = row_dict.pop(target_field)
+            features = [value for key, value in sorted(row_dict.items(), key=lambda k: k[0])]
+            return features, label
 
         # param = json.loads('<#zzjzParam#>')
         input_table_name = param.get('input_table_name')
         target_field = param.get('target_field')
         input_rdd = inputRDD(input_table_name)
 
-        output_rdd = input_rdd.map(row2list)
-        outputRDD('<#zzjzRddName#>', output_rdd)
+        output_rdd = input_rdd.map(row2list).toDF(['features', 'label'])
+        outputRDD('<#zzjzRddName#>_data', output_rdd)
 
 
 if __name__ == "__main__":

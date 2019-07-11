@@ -2,7 +2,9 @@
 # -*- coding:utf-8 _*-  
 """
 :Author :weijinlong
-:Time:  :2019/6/17 15:45
+:Time:  :2019/7/10 16:39
 :File   : __init__.py.py
 """
-from .test_optimizer import TestOptimizer
+
+from .dense import DenseLayer
+from .dropout import DropoutLayer

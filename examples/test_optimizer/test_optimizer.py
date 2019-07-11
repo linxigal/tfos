@@ -20,26 +20,7 @@ class TestOptimizer(Base):
     def run(self):
         param = self.params
 
-        import json
-        from pyspark.sql.functions import lit
-
-        valid_loss = ['mean_squared_error', 'mse',
-                      'mean_absolute_error', 'mae',
-                      'mean_absolute_percentage', 'mape',
-                      'mean_squared_logarithmic_error', 'msle',
-                      'squared_hinge',
-                      'hinge',
-                      'categorical_hinge',
-                      'binary_crossentropy',  # 对数损失， logloss
-                      'logcosh',
-                      'categorical_crossentropy',  # 多类的对数损失, 注意使用该目标函数时，需要将标签转化为形如(nb_samples, nb_classes)的二值序列
-                      'sparse_categorical_crossentropy',  # 如上，但接受稀疏标签, 需要在标签数据上增加一个维度：np.expand_dims(y,-1)
-                      'kullback_leibler_divergence',  # 从预测值概率分布Q到真值概率分布P的信息增益,用以度量两个分布的差异.
-                      'poisson',  # 即(predictions - targets * log(predictions))的均值
-                      'cosine_proximity',  # 即预测值与真实标签的余弦距离平均值的相反数
-                      ]
-        valid_optimizers = ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']
-        valid_metrics = ['accuracy']
+        from tfos.optimizers import OptimizerLayer
 
         # param = json.loads('<#zzjzParam#>')
         input_model_config_name = param.get("input_model_config_name")
@@ -47,34 +28,15 @@ class TestOptimizer(Base):
         optimizer = param.get('optimizer')
         metrics = param.get('metrics')
 
-        if loss not in valid_loss:
-            raise ValueError('model loss function incorrect!')
-        if optimizer not in valid_optimizers:
-            raise ValueError('model optimizer method incorrect!')
-
-        check_metrics = []
-        if metrics:
-            if not isinstance(metrics, list):
-                metrics = [metrics]
-            for metric in metrics:
-                if metric in valid_metrics:
-                    check_metrics.append(metric)
-                else:
-                    raise ValueError(f"parameter metrics: {metric} is invalid!")
-
-        optimizer_params = {
-            'loss': loss,
-            'optimizer': optimizer,
-            'metrics': check_metrics if check_metrics else None
-        }
-
-        # outputdf = dict2df(optimizer_params, 'compile_config')
-        outputdf = inputRDD(input_model_config_name)
-        outputdf = outputdf.withColumn("compile_config", lit(json.dumps(optimizer_params)))
-        # outputRDD('<#zzjzRddName#>_optimizer', outputdf)
-        outputRDD(input_model_config_name, outputdf)
+        model_rdd = inputRDD(input_model_config_name)
+        outputdf = OptimizerLayer(model_rdd, sc, sqlc).add(loss, optimizer, metrics)
+        outputRDD('<#zzjzRddName#>_optimizer', outputdf)
 
 
 if __name__ == "__main__":
-    TestOptimizer('<#zzjzRddName#>_compile', 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
-    print_pretty('<#zzjzRddName#>_compile')
+    from examples.test_layer import TestDense
+
+    TestDense(lrn(), 512, input_dim=784).run()
+    TestOptimizer(lrn(), 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
+    inputRDD(lrn()).show()
+    print_pretty()

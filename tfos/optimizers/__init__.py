@@ -2,7 +2,8 @@
 # -*- coding:utf-8 _*-  
 """
 :Author :weijinlong
-:Time:  :2019/6/17 15:45
+:Time:  :2019/7/11 15:19
 :File   : __init__.py.py
 """
-from .test_optimizer import TestOptimizer
+
+from .optimizer import OptimizerLayer

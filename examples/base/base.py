@@ -8,25 +8,31 @@
 
 import json
 
-global_params = {}
+GLOBAL_RDD = {}
+GP = {}
 
 
 def inputRDD(name):
-    res = global_params.get(name)
+    res = GLOBAL_RDD.get(name)
     return res
 
 
 def outputRDD(name, rdd):
-    global_params[name] = rdd
+    if 'data' not in name:
+        GP['LRN'] = name
+    GLOBAL_RDD[name] = rdd
 
 
-def print_pretty(name):
+def lrn():
+    return GP.get("LRN")
+
+
+def print_pretty(name=None):
     res = {}
-    data = global_params.get(name)
+    data = GLOBAL_RDD.get(name if name else lrn())
     if data:
         res = json.loads(data.first().model_config)
-    res = json.dumps(res, indent=4)
-    print(res)
+    print(json.dumps(res, indent=4))
 
 
 class Base(object):

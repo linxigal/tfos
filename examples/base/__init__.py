@@ -6,12 +6,12 @@
 :File       : __init__.py.py
 """
 
-from examples.base.base import Base, inputRDD, outputRDD, print_pretty
+from examples.base.base import Base, inputRDD, outputRDD, print_pretty, lrn
 from examples import sqlc, sc
 from examples.base.common import get_model_config, model2df, dict2df
 
 __all__ = [
     'sc', 'sqlc',
-    'Base', 'inputRDD', 'outputRDD', 'print_pretty',
+    'Base', 'inputRDD', 'outputRDD', 'print_pretty', 'lrn',
     'get_model_config', 'model2df', 'dict2df',
 ]
