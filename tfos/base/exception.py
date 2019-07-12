@@ -19,7 +19,7 @@ class ext_exception(object):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except Exception:
-                raise ValueError(traceback.format_exc())
+            except Exception as e:
+                raise ValueError(traceback.format_exc() + "error: {} \n {}".format(self.name, e))
 
         return wrapper

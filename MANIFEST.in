@@ -1,5 +1,6 @@
 include MANIFEST.in
 include README.md
 
-exclude example
+exclude examples
+exclude test
 recursive-include tfos *.md
