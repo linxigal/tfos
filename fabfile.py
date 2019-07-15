@@ -89,3 +89,11 @@ def reinstall(package_name):
     """
     run(f'pip uninstall {package_name} -y')
     run(f'pip install --index-url {env.pypi_index_url} --trusted-host {env.pypi_trusted_host} {package_name}')
+
+
+def remove(package_name):
+    """ 卸载包
+
+    :param package_name: 包名
+    """
+    run(f'pip uninstall {package_name} -y')

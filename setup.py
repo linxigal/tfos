@@ -31,7 +31,7 @@ setup(
     author_email="jinlong.wei@zzjunzhi.com",
     packages=find_packages(
         where='.',
-        # exclude=('test', 'examples'),
+        # exclude=('test*',)
         include=['tfos']
     ),
     classifiers=[

@@ -14,7 +14,7 @@ from tfos.base import BaseLayer, get_model_config, ext_exception
 
 class DenseLayer(BaseLayer):
 
-    @ext_exception('dense')
+    @ext_exception('Dense Layer')
     def add(self, output_dim, activation=None, input_dim=None):
         if not activation:
             activation = None

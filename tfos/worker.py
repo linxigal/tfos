@@ -28,16 +28,17 @@ class Worker(object):
         self.tf_feed = None
         self.cluster = None
         self.server = None
+        self.model = None
         self.checkpoint_path = os.path.join(self.model_dir, "checkpoint")
-        if not os.path.exists(self.checkpoint_path):
-            os.makedirs(self.checkpoint_path)
+        if not tf.gfile.Exists(self.checkpoint_path):
+            tf.gfile.MkDir(self.checkpoint_path)
         # self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint.h5')
         self.checkpoint_file = os.path.join(self.checkpoint_path, 'model_checkpoint_{epoch}')
         self.tensorboard_dir = os.path.join(self.model_dir, "tensorboard")
         self.save_dir = os.path.join(self.model_dir, "save_model")
-        if not os.path.exists(self.save_dir):
-            os.makedirs(self.save_dir)
-        self.save_model_file = os.path.join(self.save_dir, 'model.h5')
+        if not tf.gfile.Exists(self.save_dir):
+            tf.gfile.MkDir(self.save_dir)
+        self.save_model_file = os.path.join(self.save_dir, 'model.weight')
 
         self.model_config = json.loads(model_rdd.first().model_config)
         self.compile_config = json.loads(model_rdd.first().compile_config)
@@ -54,6 +55,16 @@ class Worker(object):
             labels = np.array(labels).astype('float32')
             yield inputs, labels
 
+    def build_model(self):
+        if self.task_index is None:
+            raise ValueError("task_index cannot None!!!")
+        with tf.device(tf.train.replica_device_setter(
+                worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
+            model = Sequential.from_config(self.model_config)
+            model.compile(**self.compile_config)
+            model.summary()
+            self.model = model
+
     def execute(self):
         raise NotImplementedError
 
@@ -66,26 +77,14 @@ class Worker(object):
         if ctx.job_name == "ps":
             self.server.join()
         elif ctx.job_name == "worker":
+            self.build_model()
             self.execute()
 
 
 class TrainWorker(Worker):
-    def build_model(self):
-        if self.task_index is None:
-            raise ValueError("task_index cannot None!!!")
-        with tf.device(tf.train.replica_device_setter(
-                worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            model = Sequential.from_config(self.model_config)
-
-            if os.path.exists(self.checkpoint_file) and self.task_index == 0:
-                model.load_weights(self.checkpoint_file)
-
-            model.compile(**self.compile_config)
-            model.summary()
-        return model
-
     def execute(self):
-        model = self.build_model()
+        # if os.path.exists(self.checkpoint_file) and self.task_index == 0:
+        #     self.model.load_weights(self.checkpoint_file)
         with tf.Session(self.server.target) as sess:
             sess.run(tf.global_variables_initializer())
 
@@ -97,27 +96,30 @@ class TrainWorker(Worker):
             callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
 
             # train on data read from a generator which is producing data from a Spark RDD
-            model.fit_generator(generator=self.generate_rdd_data(),
-                                steps_per_epoch=self.steps_per_epoch,
-                                epochs=self.epochs,
-                                callbacks=callbacks
-                                )
+            self.model.fit_generator(generator=self.generate_rdd_data(),
+                                     steps_per_epoch=self.steps_per_epoch,
+                                     epochs=self.epochs,
+                                     callbacks=callbacks
+                                     )
             if self.save_model_file and self.task_index == 0:
-                model.save(self.save_model_file)
+                # model.save(self.save_model_file)
+                self.model.save_weights(self.save_model_file, save_format='tf')
             self.tf_feed.terminate()
 
 
 class InferenceWorker(Worker):
     def execute(self):
         with tf.Session(self.server.target) as sess:
-            if os.path.exists(self.save_model_file) and self.task_index == 0:
-                model = load_model(self.save_model_file)
+            if not tf.gfile.Exists(self.save_model_file):
+                self.model.load_weights(self.save_model_file)
+            # if os.path.exists(self.save_model_file) and self.task_index == 0:
+            #     model = load_model(self.save_model_file)
             else:
                 raise ValueError("model train result file is not exists!!!")
 
             for i in range(self.steps_per_epoch):
                 x, y = next(self.generate_rdd_data())
-                result = model.evaluate(x, y, self.batch_size)
+                result = self.model.evaluate(x, y, self.batch_size)
                 # numpy.float32 cannot convert to DataFrame
                 self.tf_feed.batch_results([Row(loss=float(result[0]), acc=float(result[1]))])
                 # self.tf_feed.batch_results([result])
