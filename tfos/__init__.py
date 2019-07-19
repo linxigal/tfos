@@ -7,4 +7,8 @@
 
 VERSION = (0, 0, 16)
 
+import os
 from tfos.tfos import TFOS
+
+CURRENT_PATH = os.path.dirname(__file__)
+ROOT_PATH = os.path.dirname(CURRENT_PATH)

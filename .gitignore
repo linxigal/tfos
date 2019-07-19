@@ -108,3 +108,4 @@ output_data/
 tensorboard/
 executor_id
 spark-warehouse
+data/
