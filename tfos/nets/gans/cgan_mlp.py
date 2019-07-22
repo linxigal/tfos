@@ -1,16 +1,16 @@
-import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
-import numpy as np
-import matplotlib as mpl
+#!/usr/bin/env python
+# -*- coding:utf-8 _*-
+"""
+:Author     : weijinlong
+:Time:      : 2019/7/22 11:18
+:File       : image_dir.py
+"""
+import os
 
-mpl.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import os, sys
-
-sys.path.append('utils')
-from tfos.nets.gans.nets import *
-from tfos.nets.gans.datas import *
+import numpy as np
+import tensorflow as tf
+import tensorflow.contrib.layers as tcl
 
 
 def sample_z(m, n):
@@ -29,11 +29,11 @@ def concat(z, y):
     return tf.concat([z, y], 1)
 
 
-class CGAN():
-    def __init__(self, generator, discriminator, data):
-        self.generator = generator
-        self.discriminator = discriminator
+class CGAN_MLP(object):
+    def __init__(self, data, output_dir, ckpt_dir):
         self.data = data
+        self.output_dir = output_dir
+        self.ckpt_dir = ckpt_dir
 
         # data
         self.z_dim = self.data.z_dim
@@ -46,7 +46,6 @@ class CGAN():
 
         # nets
         self.G_sample = self.generator(concat(self.z, self.y))
-
         self.D_real, _ = self.discriminator(concat(self.X, self.y))
         self.D_fake, _ = self.discriminator(concat(self.G_sample, self.y), reuse=True)
 
@@ -58,21 +57,42 @@ class CGAN():
             tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_fake, labels=tf.ones_like(self.D_fake)))
 
         # solver
-        self.D_solver = tf.train.AdamOptimizer().minimize(self.D_loss, var_list=self.discriminator.vars)
-        self.G_solver = tf.train.AdamOptimizer().minimize(self.G_loss, var_list=self.generator.vars)
-
-        for var in self.discriminator.vars:
-            print(var.name)
+        self.D_solver = tf.train.AdamOptimizer().minimize(
+            self.D_loss, var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator'))
+        self.G_solver = tf.train.AdamOptimizer().minimize(
+            self.G_loss, var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator'))
 
         self.saver = tf.train.Saver()
         gpu_options = tf.GPUOptions(allow_growth=True)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
-    def train(self, sample_dir, ckpt_dir='ckpt', training_epoches=1000000, batch_size=64):
+    def generator(self, z):
+        with tf.variable_scope('generator') as vs:
+            g = tcl.fully_connected(z, 128, activation_fn=tf.nn.relu,
+                                    weights_initializer=tf.random_normal_initializer(0, 0.02))
+            g = tcl.fully_connected(g, self.X_dim, activation_fn=tf.nn.sigmoid,
+                                    weights_initializer=tf.random_normal_initializer(0, 0.02))
+        return g
+
+    def discriminator(self, x, reuse=False):
+        with tf.variable_scope('discriminator') as scope:
+            if reuse:
+                scope.reuse_variables()
+            shared = tcl.fully_connected(x, 128, activation_fn=tf.nn.relu,
+                                         weights_initializer=tf.random_normal_initializer(0, 0.02))
+            d = tcl.fully_connected(shared, 1, activation_fn=None,
+                                    weights_initializer=tf.random_normal_initializer(0, 0.02))
+
+            q = tcl.fully_connected(shared, self.y_dim, activation_fn=None,
+                                    weights_initializer=tf.random_normal_initializer(0, 0.02))  # 10 classes
+
+        return d, q
+
+    def train(self, steps, batch_size):
         fig_count = 0
         self.sess.run(tf.global_variables_initializer())
 
-        for epoch in range(training_epoches):
+        for epoch in range(steps):
             # update D
             x_b, y_b = self.data(batch_size)
             self.sess.run(
@@ -102,30 +122,10 @@ class CGAN():
                     samples = self.sess.run(self.G_sample, feed_dict={self.y: y_s, self.z: sample_z(16, self.z_dim)})
 
                     fig = self.data.data2fig(samples)
-                    plt.savefig('{}/{}_{}.png'.format(sample_dir, str(fig_count).zfill(3), str(fig_count % 10)),
+                    plt.savefig('{}/{}_{}.png'.format(self.output_dir, str(fig_count).zfill(3), str(fig_count % 10)),
                                 bbox_inches='tight')
                     fig_count += 1
                     plt.close(fig)
 
-        if epoch % 2000 == 0:
-            self.saver.save(self.sess, os.path.join(ckpt_dir, "cgan.ckpt"))
-
-
-if __name__ == '__main__':
-
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
-    # save generated images
-    sample_dir = 'Samples/mnist_cgan_mlp'
-    if not os.path.exists(sample_dir):
-        os.makedirs(sample_dir)
-
-    # param
-    generator = G_mlp_mnist()
-    discriminator = D_mlp_mnist()
-
-    data = mnist(flag='mlp')
-
-    # run
-    cgan = CGAN(generator, discriminator, data)
-    cgan.train(sample_dir)
+            if epoch % 2000 == 0:
+                self.saver.save(self.sess, os.path.join(self.ckpt_dir, "cgan.ckpt"))
