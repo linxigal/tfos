@@ -15,3 +15,4 @@ pip install -r requirements.txt
 
 [TensorFlowOnSpark环境搭建](docs/env.md) 
 
+[release](changelog.rst)
