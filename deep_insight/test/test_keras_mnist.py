@@ -11,19 +11,37 @@
     example inference path:
         # input_path = "/home/wjl/github/tfos/output_data/mnist/tfr/test"
         # input_path = "/Users/wjl/github/tfos/output_data/mnist/tfr/test"
-    execute model:
+    standalone schema execute:
         spark-submit    --master ${MASTER} \
                         --jars /home/wjl/github/TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
-                        --num-executors 16 \
-                        --executor-cores 16\
+                        --num-executors 3 \
+                        --executor-cores 1\
                         --executor-memory 4G \
                         examples/test_test/test_keras_mnist.py \
                         --mode train \
                         --format tfr \
                         --cluster_size 10 \
                         --epochs 20 \
-                        --input_path /home/wjl/github/tfos/output_data/mnist/tfr/train
+                        --input_path /home/wjl/github/tfos/output_data/mnist/tfr/train \
                         --model_dir /home/wjl/github/tfos/output_data/model_dir
+
+    yarn schema execute:
+        spark-submit    --master yarn \
+                        --queue ${QUEUE} \
+                        --conf spark.dynamicAllocation.enabled=false \
+                        --conf spark.yarn.maxAppAttempts=1 \
+                        --conf spark.executorEnv.LD_LIBRARY_PATH=$LIB_JVM:$LIB_HDFS  \
+                        --jars /home/wjl/github/TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
+                        --num-executors 3 \
+                        --executor-cores 1 \
+                        --executor-memory 4G \
+                        deep_insight/test/test_keras_mnist.py \
+                        --mode train \
+                        --format tfr \
+                        --cluster_size 3 \
+                        --epochs 1 \
+                        --input_path hdfs://t-master:8020/data/mnist/tfr/test \
+                        --model_dir hdfs://t-master:8020/data/model/mnist_mlp
 """
 
 import argparse
@@ -85,8 +103,8 @@ if __name__ == "__main__":
         raise ValueError("Parameter 'input_path' or 'model_dir' must not be empty!")
 
     if args.mode == 'train':
-        train_model(**args.__dict__)
+        train_model(**vars(args))
     elif args.mode == 'inference':
-        inference_model(**args.__dict__)
+        inference_model(**vars(args))
     else:
         parser.print_help()

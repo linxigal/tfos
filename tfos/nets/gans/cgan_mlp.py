@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as tcl
+from tensorflowonspark import TFCluster, TFNode
 
 
 def sample_z(m, n):
@@ -30,10 +31,12 @@ def concat(z, y):
 
 
 class CGAN_MLP(object):
-    def __init__(self, data, output_dir, ckpt_dir):
+    def __init__(self, data, output_path, ckpt_path, steps, batch_size):
         self.data = data
-        self.output_dir = output_dir
-        self.ckpt_dir = ckpt_dir
+        self.output_path = output_path
+        self.ckpt_path = ckpt_path
+        self.steps = steps
+        self.batch_size = batch_size
 
         # data
         self.z_dim = self.data.z_dim
@@ -57,12 +60,15 @@ class CGAN_MLP(object):
             tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_fake, labels=tf.ones_like(self.D_fake)))
 
         # solver
+        # self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        self.global_step = tf.train.get_or_create_global_step()
         self.D_solver = tf.train.AdamOptimizer().minimize(
-            self.D_loss, var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator'))
+            self.D_loss, var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator'),
+            global_step=self.global_step)
         self.G_solver = tf.train.AdamOptimizer().minimize(
             self.G_loss, var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator'))
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=3)
         gpu_options = tf.GPUOptions(allow_growth=True)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
@@ -88,11 +94,14 @@ class CGAN_MLP(object):
 
         return d, q
 
-    def train(self, steps, batch_size):
+    def train(self):
         fig_count = 0
+        steps = self.steps
+        batch_size = self.batch_size
+
         self.sess.run(tf.global_variables_initializer())
 
-        for epoch in range(steps):
+        for epoch in range(1, steps + 1):
             # update D
             x_b, y_b = self.data(batch_size)
             self.sess.run(
@@ -122,10 +131,50 @@ class CGAN_MLP(object):
                     samples = self.sess.run(self.G_sample, feed_dict={self.y: y_s, self.z: sample_z(16, self.z_dim)})
 
                     fig = self.data.data2fig(samples)
-                    plt.savefig('{}/{}_{}.png'.format(self.output_dir, str(fig_count).zfill(3), str(fig_count % 10)),
+                    plt.savefig('{}/{}_{}.png'.format(self.output_path, str(fig_count).zfill(3), str(fig_count % 10)),
                                 bbox_inches='tight')
                     fig_count += 1
                     plt.close(fig)
 
             if epoch % 2000 == 0:
-                self.saver.save(self.sess, os.path.join(self.ckpt_dir, "cgan.ckpt"))
+                self.saver.save(self.sess, os.path.join(self.ckpt_path, "cgan.ckpt"), global_step=self.global_step)
+
+    def __call__(self, args, ctx):
+        self.task_index = ctx.task_index
+        self.job_name = ctx.job_name
+        self.cluster, self.server = TFNode.start_cluster_server(ctx)
+        self.tf_feed = TFNode.DataFeed(ctx.mgr)
+
+        if ctx.job_name == "ps":
+            self.server.join()
+        elif ctx.job_name == "worker":
+            self.train()
+
+
+class TFOS_CGAN_MLP(object):
+    def __init__(self, sc, cluster_size, num_ps, input_mode=TFCluster.InputMode.TENSORFLOW):
+        self.sc = sc
+        self.input_mode = input_mode
+        self.cluster_size = cluster_size
+        self.num_ps = num_ps
+
+    def train(self, data, output_path, steps, batch_size):
+        checkpoint_path = os.path.join(output_path, 'checkpoint')
+        if not tf.gfile.Exists(checkpoint_path):
+            tf.gfile.MkDir(checkpoint_path)
+        result_path = os.path.join(output_path, 'results')
+        if not tf.gfile.Exists(result_path):
+            tf.gfile.MkDir(result_path)
+        worker = CGAN_MLP(data, result_path, checkpoint_path, steps, batch_size)
+        cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
+        cluster.shutdown()
+
+    @staticmethod
+    def local_train(data, output_path, steps, batch_size):
+        checkpoint_path = os.path.join(output_path, 'checkpoint')
+        if not tf.gfile.Exists(checkpoint_path):
+            tf.gfile.MkDir(checkpoint_path)
+        result_path = os.path.join(output_path, 'results')
+        if not tf.gfile.Exists(result_path):
+            tf.gfile.MkDir(result_path)
+        CGAN_MLP(data, result_path, checkpoint_path, steps, batch_size).train()

@@ -38,6 +38,6 @@ class InferenceModel(Base):
         columns = model_rdd.columns
         assert "model_config" in columns, "not exists model layer config!"
         assert "compile_config" in columns, "not exists model compile config!"
-        output_df = TFOS(sc).inference(input_rdd, model_rdd, cluster_size, num_ps, model_dir)
+        output_df = TFOS(sc, cluster_size, num_ps).inference(input_rdd, model_rdd, model_dir)
         output_df.show()
         outputRDD('<#zzjzRddName#>', output_df)

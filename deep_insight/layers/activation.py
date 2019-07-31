@@ -2,8 +2,8 @@
 # -*- coding:utf-8 _*-  
 """
 :Author     :weijinlong
-:Time: 2019/6/13 11:10
-:File       : activation.py
+:Time:      :2019/6/13 11:10
+:File       :activation.py
 """
 
 from deep_insight.base import *

@@ -5,15 +5,14 @@
 :File    : graph.py
 """
 
-import os
 import json
+import os
 
 import numpy as np
 import tensorflow as tf
 from pyspark.sql import Row
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.models import load_model
 from tensorflowonspark import TFNode
 
 
@@ -102,7 +101,7 @@ class TrainWorker(Worker):
                                      callbacks=callbacks
                                      )
             if self.save_model_file and self.task_index == 0:
-                # model.save(self.save_model_file)
+                # self.model.save(self.save_model_file)
                 self.model.save_weights(self.save_model_file, save_format='tf')
             self.tf_feed.terminate()
 

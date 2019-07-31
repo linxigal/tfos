@@ -44,7 +44,7 @@ class TrainModel(Base):
         assert input_config, "parameter input_model_config cannot empty!"
         model_rdd = inputRDD(input_config)
         assert model_rdd, "cannot get model config rdd from previous model layer!"
-        TFOS(sc).train(input_rdd, model_rdd, cluster_size, num_ps, batch_size, epochs, model_dir)
+        TFOS(sc, cluster_size, num_ps).train(input_rdd, model_rdd, batch_size, epochs, model_dir)
 
 
 if __name__ == "__main__":

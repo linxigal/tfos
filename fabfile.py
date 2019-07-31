@@ -54,7 +54,7 @@ def pull(code_dir=None, repo="upstream", stash=False, branch='master'):
         run('git pull %s %s' % (repo, branch))
 
 
-def test(code_dir=None, local_repo='upstream', remote_repo='origin', stash=False):
+def test(code_dir=None, local_repo='origin', remote_repo='origin', stash=False):
     """ 发布指定分支代码到服务器的测试(test)分支
 
     :param code_dir: 代码目录
