@@ -17,20 +17,15 @@ env.source_virtualenvwrapper = 'export WORKON_HOME=$HOME/.virtualenvs && source 
 env.python_path = 'export PYTHONPATH=$(pwd)'
 env.virtualenv_workon_prefix = env.source_virtualenvwrapper + ' && workon %s'
 
-env.base_dir = ''  # 项目部署根目录(必须填写)
 env.work_dir = '/home/wjl/gitlab/tfos'  # 项目目录(必须填写)
 env.work_on = ''  # workon 项目名称(必须填写)
-env.web_dir = ''  # web目录
-env.es_dir = ''  # ES 目录
-env.code_repo = ''  # 代码仓库
-env.manage_dir = ''  # manage.py所在目录;相对于项目目录,如 ./apps
 env.requirement_dir = ''  # requirements.txt 所在目录,相对于项目目录,如 ./deploy
-env.init_json_data = []  # 初始化需要load数据列表
+env.pypi_index_url = 'http://pypi.zzjz.com:3141/simple'
+env.pypi_trusted_host = 'pypi.zzjz.com'
 
 
 def hosts(servers, user='default'):
-    """
-    连接远端服务器,服务器别名之间用逗号分隔
+    """ 连接远端服务器,服务器别名之间用逗号分隔
 
     :param servers: 远程服务器别名(alias),用逗号分隔
     :param user: 登录用户名
@@ -40,14 +35,13 @@ def hosts(servers, user='default'):
     remote_hosts = [str(i) for i in range(100, 103)]
     for host in servers.split():
         if host in remote_hosts:
-            login_user = 'wjl' if user == 'default' else user
+            login_user = 'root' if user == 'default' else user
             host_ip_user = '{}@192.168.21.{}'.format(login_user, host)
             env.hosts.append(host_ip_user)
 
 
 def pull(code_dir=None, repo="upstream", stash=False, branch='master'):
-    """
-    pull线上代码: code_dir代码目录,repo仓库名,stash=False|True,branch=master
+    """ pull线上代码: code_dir代码目录,repo仓库名,stash=False|True,branch=master
     """
 
     with cd(code_dir or env.work_dir):
@@ -60,11 +54,10 @@ def pull(code_dir=None, repo="upstream", stash=False, branch='master'):
         run('git pull %s %s' % (repo, branch))
 
 
-def test(code_dir=None, local_repo='upstream', remote_repo='origin', stash=False):
-    """
-    发布指定分支代码到服务器的测试(test)分支
+def test(code_dir=None, local_repo='origin', remote_repo='origin', stash=False):
+    """ 发布指定分支代码到服务器的测试(test)分支
 
-    :param code_dir: 代码目录, 默认是~/github/TalentMiner
+    :param code_dir: 代码目录
     :param local_repo: 本地仓库名
     :param remote_repo: 远程仓库名, 默认是origin
     :param stash: 是否使用stash, 默认False
@@ -86,3 +79,21 @@ def test(code_dir=None, local_repo='upstream', remote_repo='origin', stash=False
         run('git branch -D test', warn_only=True)
         run('git checkout -b test')
         run('git pull --rebase {} test'.format(remote_repo))
+
+
+def reinstall(package_name):
+    """ 重新安装包
+
+    :param package_name: 包名
+    :return:
+    """
+    run(f'pip uninstall {package_name} -y')
+    run(f'pip install --index-url {env.pypi_index_url} --trusted-host {env.pypi_trusted_host} {package_name}')
+
+
+def remove(package_name):
+    """ 卸载包
+
+    :param package_name: 包名
+    """
+    run(f'pip uninstall {package_name} -y')

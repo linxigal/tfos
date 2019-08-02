@@ -6,15 +6,17 @@ from setuptools import find_packages, setup
 from tfos import VERSION
 
 __version__ = VERSION
-__versionstr__ = '.'.join(map(str, VERSION))
+__version_str__ = '.'.join(map(str, VERSION))
 
 PATH = dirname(__file__)
 f = open(join(PATH, 'README.md'))
 long_description = f.read().strip()
 f.close()
 
-# install_requires = []
-#
+install_requires = [
+    'tensorflow',
+    'tensorflowonspark'
+]
 # dependency_links = []
 # tests_require = []
 
@@ -23,13 +25,14 @@ setup(
     description="tensorflow on spark",
     license="",
     url="https://gitlab.zzjz.com/tfos/tfos",
-    long_description=long_description,
-    version=__versionstr__,
+    # long_description=long_description,
+    version=__version_str__,
     author="weijinlong",
-    author_email="",
+    author_email="jinlong.wei@zzjunzhi.com",
     packages=find_packages(
         where='.',
-        exclude=('test*',)
+        # exclude=('test*',)
+        include=['tfos']
     ),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -39,8 +42,8 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
     ],
-    # install_requires=install_requires,
-    # include_package_data=True,
+    install_requires=install_requires,
+    include_package_data=True,  # #启用清单文件MANIFEST.in
     # test_suite='nose.collector',
     entry_points={},
 )

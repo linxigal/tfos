@@ -46,7 +46,7 @@ def generator():
     for el in sequence:
         yield el
         
-dataset = tf.data.Dataset().from_generator(generator, output_types=tf.float32, output_shapes=[tf.float32])
+dataset = tf.data.Dataset.from_generator(generator, output_types=tf.float32, output_shapes=[tf.float32])
 ```
 在这种情况下，需要指定数据的类型和大小以创建正确的tensor
 

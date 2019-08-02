@@ -5,4 +5,10 @@
 :File    : __init__.py.py
 """
 
-VERSION = (0, 0, 1)
+VERSION = (0, 0, 28)
+
+import os
+from tfos.tfos import TFOS
+
+CURRENT_PATH = os.path.dirname(__file__)
+ROOT_PATH = os.path.dirname(CURRENT_PATH)
