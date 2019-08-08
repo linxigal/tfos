@@ -8,6 +8,7 @@
 
 import json
 
+import numpy as np
 from pyspark.sql import Row
 from tensorflow.python.keras.models import Sequential
 
@@ -34,6 +35,13 @@ def get_model_config(model_rdd, can_first_layer=True, input_dim=None):
     return model_config
 
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 class BaseLayer(object):
     def __init__(self, model_rdd, sc=None, sqlc=None):
         self.model_rdd = model_rdd
@@ -41,7 +49,7 @@ class BaseLayer(object):
         self.sqlc = sqlc
 
     def model2df(self, model, name='model_config'):
-        data = {name: json.dumps(model.get_config())}
+        data = {name: json.dumps(model.get_config(), cls=NumpyEncoder)}
         return self.sqlc.createDataFrame([Row(**data)])
 
     def dict2df(self, data, name="model_config"):
