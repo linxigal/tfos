@@ -7,9 +7,12 @@
 """
 
 import json
+
 from pyspark.sql import Row
-from .exception import ext_exception
+from tensorflow.python.keras.models import Sequential
+
 from .config import *
+from .exception import ext_exception
 
 __all__ = [
     'get_model_config', 'BaseLayer',
@@ -46,3 +49,21 @@ class BaseLayer(object):
             raise ValueError("function dict2df: parameter instance must be dict!")
         data = {name: json.dumps(data)}
         return self.sqlc.createDataFrame([Row(**data)])
+
+    def _add_layer(self, layer):
+        model_config = {}
+        if self.model_rdd:
+            model_config = json.loads(self.model_rdd.first().model_config)
+        model = Sequential.from_config(model_config)
+        model.add(layer)
+        return self.model2df(model)
+
+    def summary(self):
+        model_config = {}
+        if self.model_rdd:
+            model_config = json.loads(self.model_rdd.first().model_config)
+        model = Sequential.from_config(model_config)
+        model.summary()
+
+    def add(self):
+        raise NotImplementedError

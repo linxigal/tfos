@@ -21,10 +21,27 @@ def outputRDD(name, rdd):
     if 'data' not in name:
         GP['LRN'] = name
     GLOBAL_RDD[name] = rdd
+    SeqModel.seq_name_list.append(name)
 
 
 def lrn():
     return GP.get("LRN")
+
+
+class SeqModel(object):
+    seq_name_list = []
+    seq_model_list = []
+
+    @classmethod
+    def __get_last_name(cls):
+        return cls.seq_name_list[-1]
+
+    @property
+    def l(self):
+        return self.__get_last_name()
+
+
+sm = SeqModel
 
 
 def print_pretty(name=None):
