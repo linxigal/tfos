@@ -10,25 +10,28 @@ import hdfs
 import tensorflow as tf
 
 
-class HDFSClient(object):
-    def __init__(self):
-        self.client = None,
-        self.path = None
-
-    def _client(self, path):
+class HDFSOP(object):
+    @staticmethod
+    def __client(path):
         _, addr, file_path = path.split(':', 2)
-        self.client = hdfs.Client('http:' + addr + ':50070')
-        self.path = '/' + file_path.split('/', 1)[-1]
+        client = hdfs.Client('http:' + addr + ':50070')
+        path = '/' + file_path.split('/', 1)[-1]
+        return client, path
 
-    def makedirs(self, path):
-        self._client(path)
-        self.client.makedirs(self.path)
-        return self.path
+    @classmethod
+    def makedirs(cls, path):
+        client, path = cls.__client(path)
+        client.makedirs(path)
+
+    @classmethod
+    def write(cls, path, overwrite=False):
+        client, path = cls.__client(path)
+        return client.write(path, overwrite=overwrite)
 
 
 def makedirs(path):
     if not tf.gfile.Exists(path):
-    #     if 'hdfs' in path:
-    # HDFSClient().makedirs(path)
-    # else:
+        #     if 'hdfs' in path:
+        # HDFSClient().makedirs(path)
+        # else:
         tf.gfile.MakeDirs(path)
