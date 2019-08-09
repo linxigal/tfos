@@ -5,6 +5,7 @@
 :Time:      : 2019/7/22 11:18
 :File       : image_dir.py
 """
+import io
 import os
 
 import matplotlib.pyplot as plt
@@ -12,6 +13,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as tcl
 from tensorflowonspark import TFCluster, TFNode
+
+from tfos.utils.file_manager import HDFSOP
 
 
 def sample_z(m, n):
@@ -131,13 +134,26 @@ class CGAN_MLP(object):
                     samples = self.sess.run(self.G_sample, feed_dict={self.y: y_s, self.z: sample_z(16, self.z_dim)})
 
                     fig = self.data.data2fig(samples)
-                    plt.savefig('{}/{}_{}.png'.format(self.output_path, str(fig_count).zfill(3), str(fig_count % 10)),
-                                bbox_inches='tight')
+                    image_path = '{}/{}_{}.png'.format(self.output_path, str(fig_count).zfill(3), str(fig_count % 10))
+                    self.save_image(image_path)
+                    # plt.savefig('{}/{}_{}.png'.format(self.output_path, str(fig_count).zfill(3), str(fig_count % 10)),
+                    #             bbox_inches='tight')
                     fig_count += 1
                     plt.close(fig)
 
             if epoch % 2000 == 0:
                 self.saver.save(self.sess, os.path.join(self.ckpt_path, "cgan.ckpt"), global_step=self.global_step)
+
+    def save_image(self, image_path):
+        if 'hdfs' in self.output_path:
+            buf = io.BytesIO()
+            plt.savefig(buf, bbox_inches='tight')
+            buf.seek(0)
+            with HDFSOP.write(image_path, overwrite=True) as write:
+                write.write(buf.getvalue())
+            buf.close()
+        else:
+            plt.savefig(image_path, bbox_inches='tight')
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -172,9 +188,11 @@ class TFOS_CGAN_MLP(object):
     @staticmethod
     def local_train(data, output_path, steps, batch_size):
         checkpoint_path = os.path.join(output_path, 'checkpoint')
-        if not tf.gfile.Exists(checkpoint_path):
-            tf.gfile.MkDir(checkpoint_path)
+        if tf.gfile.Exists(checkpoint_path):
+            tf.gfile.DeleteRecursively(checkpoint_path)
+        tf.gfile.MkDir(checkpoint_path)
         result_path = os.path.join(output_path, 'results')
-        if not tf.gfile.Exists(result_path):
-            tf.gfile.MkDir(result_path)
+        if tf.gfile.Exists(result_path):
+            tf.gfile.DeleteRecursively(result_path)
+        tf.gfile.MkDir(result_path)
         CGAN_MLP(data, result_path, checkpoint_path, steps, batch_size).train()
