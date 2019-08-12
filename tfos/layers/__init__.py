@@ -11,9 +11,11 @@ from .activations import ActivationLayer, LeakyReLULayer, PReLULayer, ELULayer, 
 from .convolution import Conv1DLayer, Conv2DLayer, Conv3DLayer, Conv2DTransposeLayer, Conv3DTransposeLayer
 from .dense import DenseLayer
 from .dropout import DropoutLayer
+from .pooling import MaxPool1DLayer, MaxPool2DLayer, MaxPool3DLayer, AvgPool1DLayer, AvgPool2DLayer, AvgPool3DLayer
 
 __all__ = [
     "Conv1DLayer", "Conv2DLayer", "Conv3DLayer", "Conv2DTransposeLayer", "Conv3DTransposeLayer",
     "DenseLayer", "DropoutLayer",
     "ActivationLayer", "LeakyReLULayer", "PReLULayer", "ELULayer", "ThresholdedReLULayer", "SoftmaxLayer", "ReLULayer",
+    "MaxPool1DLayer", "MaxPool2DLayer", "MaxPool3DLayer", "AvgPool1DLayer", "AvgPool2DLayer", "AvgPool3DLayer",
 ]

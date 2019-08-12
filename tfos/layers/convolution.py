@@ -14,7 +14,7 @@ from tfos.base import BaseLayer, ext_exception
 class Conv1DLayer(BaseLayer):
     __doc__ = Conv2D.__doc__
 
-    @ext_exception("Convolution 1D Layer")
+    @ext_exception("Convolution1D Layer")
     def add(self, filters, kernel_size,
             strides=1,
             padding='valid',
@@ -34,7 +34,7 @@ class Conv1DLayer(BaseLayer):
 class Conv2DLayer(BaseLayer):
     __doc__ = Conv2D.__doc__
 
-    @ext_exception("Convolution 2D Layer")
+    @ext_exception("Convolution2D Layer")
     def add(self, filters, kernel_size,
             strides=(1, 1),
             padding='valid',
@@ -55,7 +55,7 @@ class Conv2DLayer(BaseLayer):
 class Conv3DLayer(BaseLayer):
     __doc__ = Conv3D.__doc__
 
-    @ext_exception("Convolution 3D Layer")
+    @ext_exception("Convolution3D Layer")
     def add(self, filters, kernel_size,
             strides=(1, 1, 1),
             padding='valid',
@@ -76,7 +76,7 @@ class Conv3DLayer(BaseLayer):
 class Conv2DTransposeLayer(BaseLayer):
     __doc__ = Conv2DTranspose.__doc__
 
-    @ext_exception("Convolution 2D Transpose Layer")
+    @ext_exception("Convolution2DTranspose Layer")
     def add(self, filters, kernel_size,
             strides=(1, 1),
             padding='valid',
@@ -99,7 +99,7 @@ class Conv2DTransposeLayer(BaseLayer):
 class Conv3DTransposeLayer(BaseLayer):
     __doc__ = Conv3DTranspose.__doc__
 
-    @ext_exception("Convolution 3D Transpose Layer")
+    @ext_exception("Convolution3DTranspose Layer")
     def add(self, filters, kernel_size,
             strides=(1, 1, 1),
             padding='valid',

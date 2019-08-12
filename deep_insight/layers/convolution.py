@@ -10,10 +10,10 @@ from deep_insight.base import *
 
 
 class Convolution(Base):
-    def __init__(self, input_model_config_name, filters, kernel_size, strides, padding=None, activation=None,
+    def __init__(self, input_prev_layers, filters, kernel_size, strides, padding=None, activation=None,
                  input_shape=None):
         super(Convolution, self).__init__()
-        self.p('input_model_config_name', input_model_config_name)
+        self.p('input_prev_layers', input_prev_layers)
         self.p('filters', filters)
         self.p('kernel_size', kernel_size)
         self.p('strides', strides)
@@ -32,7 +32,7 @@ class Convolution1D(Convolution):
         from tfos.layers import Conv1DLayer
 
         # param = json.loads('<#zzjzParam#>')
-        input_model_config_name = param.get("input_model_config_name")
+        input_prev_layers = param.get("input_prev_layers")
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides', '1')  # two integer separate with a comma
@@ -62,7 +62,7 @@ class Convolution1D(Convolution):
         if input_shape:
             kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
-        model_rdd = inputRDD(input_model_config_name)
+        model_rdd = inputRDD(input_prev_layers)
         output_df = Conv1DLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Conv2D', output_df)
 
@@ -74,7 +74,7 @@ class Convolution2D(Convolution):
         from tfos.layers import Conv2DLayer
 
         # param = json.loads('<#zzjzParam#>')
-        input_model_config_name = param.get("input_model_config_name")
+        input_prev_layers = param.get("input_prev_layers")
         filters = int(param.get('filters'))  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides')  # two integer separate with a comma
@@ -104,7 +104,7 @@ class Convolution2D(Convolution):
         if input_shape:
             kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
-        model_rdd = inputRDD(input_model_config_name)
+        model_rdd = inputRDD(input_prev_layers)
         output_df = Conv2DLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Conv2D', output_df)
 
@@ -116,7 +116,7 @@ class Convolution3D(Convolution):
         from tfos.layers import Conv3DLayer
 
         # param = json.loads('<#zzjzParam#>')
-        input_model_config_name = param.get("input_model_config_name")
+        input_prev_layers = param.get("input_prev_layers")
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides')  # two integer separate with a comma
@@ -146,7 +146,7 @@ class Convolution3D(Convolution):
         if input_shape:
             kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
-        model_rdd = inputRDD(input_model_config_name)
+        model_rdd = inputRDD(input_prev_layers)
         output_df = Conv3DLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Conv2D', output_df)
 
@@ -158,7 +158,7 @@ class Convolution2DTranspose(Convolution):
         from tfos.layers import Conv2DTransposeLayer
 
         # param = json.loads('<#zzjzParam#>')
-        input_model_config_name = param.get("input_model_config_name")
+        input_prev_layers = param.get("input_prev_layers")
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides')  # two integer separate with a comma
@@ -188,7 +188,7 @@ class Convolution2DTranspose(Convolution):
         if input_shape:
             kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
-        model_rdd = inputRDD(input_model_config_name)
+        model_rdd = inputRDD(input_prev_layers)
         output_df = Conv2DTransposeLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Conv2D', output_df)
 
@@ -200,7 +200,7 @@ class Convolution3DTranspose(Convolution):
         from tfos.layers import Conv3DTransposeLayer
 
         # param = json.loads('<#zzjzParam#>')
-        input_model_config_name = param.get("input_model_config_name")
+        input_prev_layers = param.get("input_prev_layers")
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides')  # two integer separate with a comma
@@ -230,7 +230,7 @@ class Convolution3DTranspose(Convolution):
         if input_shape:
             kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
-        model_rdd = inputRDD(input_model_config_name)
+        model_rdd = inputRDD(input_prev_layers)
         output_df = Conv3DTransposeLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Conv2D', output_df)
 
