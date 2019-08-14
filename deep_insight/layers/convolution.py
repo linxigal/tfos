@@ -26,9 +26,28 @@ class Convolution(Base):
 
 
 class Convolution1D(Convolution):
+    """一维卷积算子
+
+    参数：
+        input_prev_layers: 输入模型
+            当前算子层之前构建的模型层参数
+        filters: 过滤器数量
+            正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
+        kernel_size: 卷积核
+            一维卷积核为一维的正整数
+        strides: 移动窗口
+            一维卷积核为一维的正整数
+        padding: 填充方式
+            进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
+        activation: 激活函数
+            当前算子的激活函数，默认值为空
+        input_shape： 输入形状
+            输入数据的维度形状，当前为第一层模型算子时，该参数不能为空，其余情况可为空
+    """
     def run(self):
         param = self.params
 
+        from tfos.choices import CHOICES
         from tfos.layers import Conv1DLayer
 
         # param = json.loads('<#zzjzParam#>')
@@ -36,9 +55,9 @@ class Convolution1D(Convolution):
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides', '1')  # two integer separate with a comma
-        padding = param.get('padding', 'valid')
-        activation = param.get('activation', '')
-        input_shape = param.get('input_shape')  # many integer separate with comma
+        padding = param.get('padding', CHOICES['padding'][0])
+        activation = param.get('activation', CHOICES['activation'][0])
+        input_shape = param.get('input_shape', '')  # many integer separate with comma
 
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
