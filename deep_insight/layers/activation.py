@@ -11,25 +11,6 @@ from deep_insight.base import *
 from deep_insight.layers.dense import Dense
 
 
-class Activation(Base):
-    def __init__(self, input_prev_layers, activation):
-        super(Activation, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
-        self.p('activation', activation)
-
-    def run(self):
-        params = self.params
-
-        from tfos.layers import ActivationLayer
-
-        # param = json.loads('<#zzjzParam#>')
-        input_prev_layers = params.get("input_prev_layers")
-        activation = params.get('activation')
-        model_rdd = inputRDD(input_prev_layers)
-        output_df = ActivationLayer(model_rdd, sc, sqlc).add(activation)
-        outputRDD('<#zzjzRddName#>_activation', output_df)
-
-
 class LeakyReLU(Base):
     def __init__(self, input_prev_layers, alpha):
         super(LeakyReLU, self).__init__()
@@ -154,15 +135,6 @@ class ReLU(Base):
 
 
 class TestActivation(unittest.TestCase):
-
-    @unittest.skip('')
-    def test_activation(self):
-        Dense(lrn(), 512, input_dim=784).run()
-        Activation(lrn(), activation='relu').run()
-        Activation(lrn(), activation='relu').run()
-        Activation(lrn(), activation='relu').run()
-        SummaryLayer(lrn()).run()
-
     @unittest.skip('')
     def test_leaky_relu(self):
         Dense(lrn(), 512, input_dim=784).run()

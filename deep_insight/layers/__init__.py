@@ -7,4 +7,3 @@
 """
 from .dense import Dense
 from .dropout import Dropout
-from .activation import Activation

@@ -7,8 +7,8 @@
 
 from tfos.base.config import *
 
-CHOICES = dict(
-    padding=['valid', 'same'],
-    activation=[''] + valid_activations,
-    loss=valid_losses
-)
+BOOLEAN = ['true', 'false']
+PADDING = ['valid', 'same']
+ACTIVATIONS = [''] + valid_activations
+LOSSES = valid_losses
+

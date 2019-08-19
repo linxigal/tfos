@@ -41,22 +41,23 @@ class Convolution1D(Convolution):
             进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
         activation: 激活函数
             当前算子的激活函数，默认值为空
-        input_shape： 输入形状
+        input_shape: 输入形状
             输入数据的维度形状，当前为第一层模型算子时，该参数不能为空，其余情况可为空
     """
+
     def run(self):
         param = self.params
 
-        from tfos.choices import CHOICES
         from tfos.layers import Conv1DLayer
+        from tfos.choices import PADDING, ACTIVATIONS
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides', '1')  # two integer separate with a comma
-        padding = param.get('padding', CHOICES['padding'][0])
-        activation = param.get('activation', CHOICES['activation'][0])
+        padding = param.get('padding', PADDING[0])
+        activation = param.get('activation', ACTIVATIONS[0])
         input_shape = param.get('input_shape', '')  # many integer separate with comma
 
         # 必传参数
