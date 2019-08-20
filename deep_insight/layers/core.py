@@ -181,6 +181,7 @@ class SpatialDropout2D(Base):
         找到它。如果你从未设置过它，那么它将是 channels_last
 
     """
+
     def __init__(self, input_prev_layers, rate, data_format=None):
         super(SpatialDropout2D, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
@@ -230,6 +231,7 @@ class SpatialDropout3D(Base):
         模式中，通道维度位于索引 4。默认为 image_data_format 的值，你可以在 Keras 的配置文件 ~/.keras/keras.json
         中找到它。如果你从未设置过它，那么它将是 channels_last
     """
+
     def __init__(self, input_prev_layers, rate, data_format=None):
         super(SpatialDropout3D, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
@@ -258,6 +260,21 @@ class SpatialDropout3D(Base):
 
 
 class Activation(Base):
+    """激活层
+    将激活函数应用于输出
+
+    输入尺寸
+        任意尺寸。 当使用此层作为模型中的第一层时， 使用参数 input_shape （整数元组，不包括样本数的轴）。
+
+    输出尺寸
+        与输入相同。
+
+    参数：
+        activation: 激活函数
+            要使用的激活函数的名称 (详见: activations)， 或者选择一个 Theano 或 TensorFlow 操作。
+
+    """
+
     def __init__(self, input_prev_layers, activation):
         super(Activation, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
@@ -282,10 +299,46 @@ class Activation(Base):
 
 
 class Reshape(Base):
-    def __init__(self, input_prev_layers, target_shape):
+    """Reshape层
+    将输入重新调整为特定的尺寸。
+
+    参数：
+        target_shape: 目标尺寸
+            整数元组。 不包含表示批量的轴。
+
+    输入尺寸
+        任意，尽管输入尺寸中的所有维度必须是固定的。 当使用此层作为模型中的第一层时， 使用参数 `input_shape `
+        （整数元组，不包括样本数的轴）。
+
+    输出尺寸
+        `(batch_size,) + target_shape`
+
+    例如：
+
+    ```python
+        # 作为 Sequential 模型的第一层
+        model = Sequential()
+        model.add(Reshape((3, 4), input_shape=(12,)))
+        # 现在：model.output_shape == (None, 3, 4)
+        # 注意： `None` 是批表示的维度
+
+        # 作为 Sequential 模型的中间层
+        model.add(Reshape((6, 2)))
+        # 现在： model.output_shape == (None, 6, 2)
+
+        # 还支持使用 `-1` 表示维度的尺寸推断
+        model.add(Reshape((-1, 2, 2)))
+        # 现在： model.output_shape == (None, 3, 2, 2)
+    ```
+
+
+    """
+
+    def __init__(self, input_prev_layers, target_shape, input_shape=None):
         super(Reshape, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
         self.p('target_shape', target_shape)
+        self.p('input_shape', input_shape)
 
     def run(self):
         param = self.params
@@ -294,9 +347,12 @@ class Reshape(Base):
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         target_shape = param.get("target_shape")
+        input_shape = param.get("input_shape")
 
         # 必填参数
         kwargs = dict(target_shape=tuple([int(i) for i in target_shape.split(',') if i]))
+        if input_shape:
+            kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = ReshapeLayer(model_rdd, sqlc=sqlc).add(**kwargs)
@@ -304,10 +360,37 @@ class Reshape(Base):
 
 
 class Permute(Base):
-    def __init__(self, input_prev_layers, dims):
+    """Permute层
+    根据给定的模式置换输入的维度。
+
+    在某些场景下很有用，例如将 RNN 和 CNN 连接在一起。
+
+    例如：
+
+    ```python
+        model = Sequential()
+        model.add(Permute((2, 1), input_shape=(10, 64)))
+        # 现在： model.output_shape == (None, 64, 10)
+        # 注意： `None` 是批表示的维度
+    ```
+
+    参数：
+        dims: 置换模式
+            整数元组，置换模式，不包含样本维度。 索引从 1 开始。 例如, `(2, 1)` 置换输入的第一和第二个维度。
+
+    输入尺寸
+        任意。当使用此层作为模型中的第一层时， 使用参数 input_shape （整数元组，不包括样本数的轴）。
+
+    输出尺寸
+        与输入尺寸相同，但是维度根据指定的模式重新排列。
+
+    """
+
+    def __init__(self, input_prev_layers, dims, input_shape=None):
         super(Permute, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
         self.p('dims', dims)
+        self.p('input_shape', input_shape)
 
     def run(self):
         param = self.params
@@ -317,16 +400,42 @@ class Permute(Base):
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         dims = param.get("dims")
+        input_shape = param.get("input_shape")
 
         # 必填参数
-        kwargs = dict(dims=int(dims))
+        kwargs = dict(dims=tuple([int(i) for i in dims.split(',') if i]))
+        if input_shape:
+            kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
+        print(kwargs)
         model_rdd = inputRDD(input_prev_layers)
         output_df = PermuteLayer(model_rdd, sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Dropout', output_df)
 
 
 class Flatten(Base):
+    """Flatten层
+    将输入展平。不影响批量大小。
+
+    参数：
+        data_format：数据格式
+            一个字符串，其值为 `channels_last`（默认值）或者 `channels_first`。它表明输入的维度的顺序。此参数的目的是当
+            模型从一种数据格式切换到另一种数据格式时保留权重顺序。`channels_last` 对应着尺寸为 `(batch, ..., channels)`
+            的输入，而 `channels_first` 对应着尺寸为 `(batch, channels, ...)` 的输入。默认为 `image_data_format` 的值，
+            你可以在 Keras 的配置文件 `~/.keras/keras.json` 中找到它。如果你从未设置过它，那么它将是 `channels_last`
+
+    例如：
+
+    ```python
+        model = Sequential()
+        model.add(Conv2D(64, (3, 3),input_shape=(3, 32, 32), padding='same',))
+        # 现在：model.output_shape == (None, 64, 32, 32)
+
+        model.add(Flatten())
+        # 现在：model.output_shape == (None, 65536)
+    ```
+    """
+
     def __init__(self, input_prev_layers, data_format=None):
         super(Flatten, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
@@ -353,6 +462,32 @@ class Flatten(Base):
 
 
 class RepeatVector(Base):
+    """RepeatVector层
+    将输入重复 n 次。
+
+    例如：
+
+    ```python
+        model = Sequential()
+        model.add(Dense(32, input_dim=32))
+        # 现在： model.output_shape == (None, 32)
+        # 注意： `None` 是批表示的维度
+
+        model.add(RepeatVector(3))
+        # 现在： model.output_shape == (None, 3, 32)
+    ```
+
+    参数：
+        n: 重复次数
+            整数，重复次数
+
+    输入尺寸
+        2D 张量，尺寸为 (num_samples, features)。
+
+    输出尺寸
+        3D 张量，尺寸为 (num_samples, n, features)。
+    """
+
     def __init__(self, input_prev_layers, n):
         super(RepeatVector, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
@@ -376,13 +511,62 @@ class RepeatVector(Base):
 
 
 class Lambda(Base):
-    def __init__(self, input_prev_layers, function, output_shape=None, mask=None, arguments=None):
+    """Lambda层
+    将任意表达式封装为 Layer 对象。
+
+    例如：
+
+    ```python
+        # 添加一个 x -> x^2 层
+        model.add(Lambda(lambda x: x ** 2))
+    ```
+
+    ```python
+        # 添加一个网络层，返回输入的正数部分与负数部分的反面的连接
+
+        def antirectifier(x):
+            x -= K.mean(x, axis=1, keepdims=True)
+            x = K.l2_normalize(x, axis=1)
+            pos = K.relu(x)
+            neg = K.relu(-x)
+            return K.concatenate([pos, neg], axis=1)
+
+        def antirectifier_output_shape(input_shape):
+            shape = list(input_shape)
+            assert len(shape) == 2  # only valid for 2D tensors
+            shape[-1] *= 2
+            return tuple(shape)
+
+        model.add(Lambda(antirectifier,output_shape=antirectifier_output_shape))
+    ```
+
+    参数：
+        function: 函数
+            需要封装的函数。 将输入张量作为第一个参数。
+        output_shape: 输出尺寸
+            预期的函数输出尺寸。 只在使用 Theano 时有意义。 可以是元组或者函数。 如果是元组，它只指定第一个维度；
+            样本维度假设与输入相同：  `output_shape = (input_shape[0], ) + output_shape` 或者，输入是 `None` 且
+            样本维度也是 `None`：  `output_shape = (None, ) + output_shape` 如果是函数，它指定整个尺寸为输入尺寸
+            的一个函数：  `output_shape = f(input_shape)`
+        mask: 掩膜
+        arguments: 可选参数
+            可选的需要传递给函数的关键字参数。
+
+    输入尺寸
+        任意。当使用此层作为模型中的第一层时， 使用参数 input_shape （整数元组，不包括样本数的轴）。
+
+    输出尺寸
+        由 output_shape 参数指定 (或者在使用 TensorFlow 时，自动推理得到)。
+    """
+
+    def __init__(self, input_prev_layers, function, output_shape=None, mask=None, arguments=None, input_shape=None):
         super(Lambda, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
         self.p('function', function)
         self.p('output_shape', output_shape)
         self.p('mask', mask)
         self.p('arguments', arguments)
+        self.p('input_shape', input_shape)
 
     def run(self):
         param = self.params
@@ -395,15 +579,21 @@ class Lambda(Base):
         output_shape = param.get("output_shape", "")
         mask = param.get("mask", "")
         arguments = param.get("arguments", "")
+        input_shape = param.get("input_shape", "")
 
         # 必填参数
         kwargs = dict(function=function)
         if output_shape:
-            kwargs['output_shape'] = tuple([int(i) for i in output_shape.split(',') if i])
+            if callable(output_shape):
+                kwargs['output_shape'] = output_shape
+            else:
+                kwargs['output_shape'] = tuple([int(i) for i in output_shape.split(',') if i])
         if mask:
             kwargs['mask'] = mask
         if arguments:
             kwargs['arguments'] = arguments
+        if input_shape:
+            kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = LambdaLayer(model_rdd, sqlc=sqlc).add(**kwargs)
@@ -528,11 +718,28 @@ class Dense(Base):
 
 
 class ActivityRegularization(Base):
-    def __init__(self, input_prev_layers, l1='0', l2='0'):
+    """
+    网络层，对基于代价函数的输入活动应用一个更新。
+
+    参数
+        l1: L1 正则化因子
+            (正数浮点型)。
+        l2: L2 正则化因子
+            (正数浮点型)。
+
+    输入尺寸
+        任意。当使用此层作为模型中的第一层时， 使用参数 input_shape （整数元组，不包括样本数的轴）。
+
+    输出尺寸
+        与输入相同。
+    """
+
+    def __init__(self, input_prev_layers, l1='0', l2='0', input_shape=None):
         super(ActivityRegularization, self).__init__()
         self.p('input_prev_layers', input_prev_layers)
         self.p('l1', l1)
         self.p('l2', l2)
+        self.p('input_shape', input_shape)
 
     def run(self):
         param = self.params
@@ -541,11 +748,14 @@ class ActivityRegularization(Base):
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
-        l1 = param.get("l1", "0")
-        l2 = param.get("l2", "0")
+        l1 = param.get("l1", "0.")
+        l2 = param.get("l2", "0.")
+        input_shape = param.get("input_shape", "")
 
         # 参数
         kwargs = dict(l1=float(l1), l2=float(l2))
+        if input_shape:
+            kwargs['input_shape'] = tuple([int(i) for i in input_shape.split(',') if i])
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = ActivityRegularizationLayer(model_rdd, sqlc=sqlc).add(**kwargs)
@@ -603,22 +813,44 @@ class TestCore(unittest.TestCase):
 
     @unittest.skip('')
     def test_reshape(self):
+        Reshape(lrn(), '4,6', input_shape='24').run()
+        Reshape(lrn(), '3,8').run()
+        Reshape(lrn(), '-1,3,4').run()
         SummaryLayer(lrn()).run()
 
     @unittest.skip('')
     def test_permute(self):
+        Permute(lrn(), '2,1,3', '10,64,128').run()
+        Permute(lrn(), '1,3,2').run()
+        Permute(lrn(), '2,1,3').run()
         SummaryLayer(lrn()).run()
 
     @unittest.skip('')
     def test_flatten(self):
+        Dense(lrn(), '32', input_shape='10,64,128').run()
+        Flatten(lrn()).run()
+        Flatten(lrn()).run()
         SummaryLayer(lrn()).run()
 
     @unittest.skip('')
     def test_repeat_vector(self):
+        Dense(lrn(), '32', input_shape='64').run()
+        RepeatVector(lrn(), '3').run()
         SummaryLayer(lrn()).run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_lambda(self):
+        from tensorflow.python.keras import backend as K
+
+        def antirectifier(x):
+            x -= K.mean(x, axis=1, keepdims=True)
+            x = K.l2_normalize(x, axis=1)
+            pos = K.relu(x)
+            neg = K.relu(-x)
+            return K.concatenate([pos, neg], axis=1)
+
+        Dense(lrn(), '32', input_shape='10,64').run()
+        Lambda(lrn(), antirectifier).run()
         SummaryLayer(lrn()).run()
 
     @unittest.skip('')
@@ -630,6 +862,9 @@ class TestCore(unittest.TestCase):
 
     @unittest.skip('')
     def test_activity_regularization(self):
+        # l1,l2不能同时为0
+        ActivityRegularization(lrn(), '0.1', '0.5', input_shape='10,64').run()
+        ActivityRegularization(lrn(), '0.6', '0.2').run()
         SummaryLayer(lrn()).run()
 
 
