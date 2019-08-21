@@ -330,8 +330,6 @@ class Reshape(Base):
         model.add(Reshape((-1, 2, 2)))
         # 现在： model.output_shape == (None, 3, 2, 2)
     ```
-
-
     """
 
     def __init__(self, input_prev_layers, target_shape, input_shape=None):
@@ -673,11 +671,12 @@ class Dense(Base):
 
         from tfos.layers import DenseLayer
         from tfos.choices import BOOLEAN
+        from tfos.choices import ACTIVATIONS
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         units = param.get("units")
-        activation = param.get("activation", "")
+        activation = param.get("activation", ACTIVATIONS[0])
         use_bias = param.get("use_bias", BOOLEAN[0])
         kernel_initializer = param.get("kernel_initializer", "glorot_uniform")
         bias_initializer = param.get("bias_initializer", "zeros")
@@ -721,7 +720,7 @@ class ActivityRegularization(Base):
     """
     网络层，对基于代价函数的输入活动应用一个更新。
 
-    参数
+    参数:
         l1: L1 正则化因子
             (正数浮点型)。
         l2: L2 正则化因子

@@ -29,8 +29,6 @@ class Convolution1D(Convolution):
     """一维卷积算子
 
     参数：
-        input_prev_layers: 输入模型
-            当前算子层之前构建的模型层参数
         filters: 过滤器数量
             正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
         kernel_size: 卷积核
@@ -41,8 +39,6 @@ class Convolution1D(Convolution):
             进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
         activation: 激活函数
             当前算子的激活函数，默认值为空
-        input_shape: 输入形状
-            输入数据的维度形状，当前为第一层模型算子时，该参数不能为空，其余情况可为空
     """
 
     def run(self):
@@ -88,6 +84,20 @@ class Convolution1D(Convolution):
 
 
 class Convolution2D(Convolution):
+    """二维卷积算子
+
+    参数：
+        filters: 过滤器数量
+            正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
+        kernel_size: 卷积核
+            二维卷积核为二维的正整数
+        strides: 移动窗口
+            二维卷积核为二维的正整数
+        padding: 填充方式
+            进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
+        activation: 激活函数
+            当前算子的激活函数，默认值为空
+    """
     def run(self):
         param = self.params
 
@@ -95,7 +105,7 @@ class Convolution2D(Convolution):
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
-        filters = int(param.get('filters'))  # integer
+        filters = param.get('filters')  # integer
         kernel_size = param.get('kernel_size')  # two integer separate with a comma
         strides = param.get('strides')  # two integer separate with a comma
         padding = param.get('padding')
@@ -130,6 +140,20 @@ class Convolution2D(Convolution):
 
 
 class Convolution3D(Convolution):
+    """三维卷积算子
+
+    参数：
+        filters: 过滤器数量
+            正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
+        kernel_size: 卷积核
+            三维卷积核为三维的正整数
+        strides: 移动窗口
+            三维卷积核为三维的正整数
+        padding: 填充方式
+            进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
+        activation: 激活函数
+            当前算子的激活函数，默认值为空
+    """
     def run(self):
         param = self.params
 
@@ -172,6 +196,20 @@ class Convolution3D(Convolution):
 
 
 class Convolution2DTranspose(Convolution):
+    """二维转换卷积算子
+
+    参数：
+        filters: 过滤器数量
+            正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
+        kernel_size: 卷积核
+            二维卷积核为二维的正整数
+        strides: 移动窗口
+            二维卷积核为二维的正整数
+        padding: 填充方式
+            进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
+        activation: 激活函数
+            当前算子的激活函数，默认值为空
+    """
     def run(self):
         param = self.params
 
@@ -214,6 +252,20 @@ class Convolution2DTranspose(Convolution):
 
 
 class Convolution3DTranspose(Convolution):
+    """三维转换卷积算子
+
+    参数：
+        filters: 过滤器数量
+            正整数，每一个过滤器输出一个结果，当前层输出为过滤器数量大小的维度
+        kernel_size: 卷积核
+            三维卷积核为三维的正整数
+        strides: 移动窗口
+            三维卷积核为三维的正整数
+        padding: 填充方式
+            进行卷积运算时边缘的填充方式，valid表示不填充，same表示填充
+        activation: 激活函数
+            当前算子的激活函数，默认值为空
+    """
     def run(self):
         param = self.params
 
