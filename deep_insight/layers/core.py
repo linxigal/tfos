@@ -671,12 +671,12 @@ class Dense(Base):
 
         from tfos.layers import DenseLayer
         from tfos.choices import BOOLEAN
-        from tfos.choices import ACTIVATIONS
+        from tfos.choices import D_ACTIVATIONS
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         units = param.get("units")
-        activation = param.get("activation", ACTIVATIONS[0])
+        activation = param.get("activation", D_ACTIVATIONS[0])
         use_bias = param.get("use_bias", BOOLEAN[0])
         kernel_initializer = param.get("kernel_initializer", "glorot_uniform")
         bias_initializer = param.get("bias_initializer", "zeros")

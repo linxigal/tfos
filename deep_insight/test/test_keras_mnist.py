@@ -16,14 +16,14 @@
                         --jars /home/wjl/github/TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
                         --num-executors 3 \
                         --executor-cores 1\
-                        --executor-memory 4G \
-                        examples/test_test/test_keras_mnist.py \
+                        --executor-memory 8G \
+                        deep_insight/test/test_keras_mnist.py \
                         --mode train \
                         --format tfr \
                         --cluster_size 10 \
                         --epochs 20 \
-                        --input_path /home/wjl/github/tfos/output_data/mnist/tfr/train \
-                        --model_dir /home/wjl/github/tfos/output_data/model_dir
+                        --input_path /home/wjl/github/tfos/data/mnist/tfr/train \
+                        --model_dir /home/wjl/github/tfos/data/model_dir
 
     yarn schema execute:
         spark-submit    --master yarn \

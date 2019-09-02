@@ -9,6 +9,6 @@ from tfos.base.config import *
 
 BOOLEAN = ['true', 'false']
 PADDING = ['valid', 'same']
-ACTIVATIONS = [''] + valid_activations
+D_ACTIVATIONS = ['不使用'] + valid_activations
+ACTIVATIONS = valid_activations
 LOSSES = valid_losses
-
