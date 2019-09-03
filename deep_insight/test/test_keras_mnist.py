@@ -51,8 +51,8 @@ from deep_insight import ROOT_PATH
 from deep_insight.base import lrn
 from deep_insight.data.read_mnist import ReadMnist
 from deep_insight.layers.core import Dense, Dropout
-from deep_insight.model.inference import InferenceModel
-from deep_insight.model.train import TrainModel
+from deep_insight.model.model import InferenceModel
+from deep_insight.model.model import TrainModel
 from deep_insight.optimizers.optimizer import Optimizer
 
 # load data
