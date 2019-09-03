@@ -9,7 +9,7 @@
     local test execute:
          spark-submit  \
          --jars /home/wjl/github/TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
-         deep_insight/model/train.py
+         deep_insight/model/model.py
 """
 
 import os
