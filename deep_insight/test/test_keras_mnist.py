@@ -16,14 +16,14 @@
                         --jars /home/wjl/github/TensorFlowOnSpark/lib/tensorflow-hadoop-1.0-SNAPSHOT.jar \
                         --num-executors 3 \
                         --executor-cores 1\
-                        --executor-memory 4G \
-                        examples/test_test/test_keras_mnist.py \
+                        --executor-memory 8G \
+                        deep_insight/test/test_keras_mnist.py \
                         --mode train \
                         --format tfr \
                         --cluster_size 10 \
                         --epochs 20 \
-                        --input_path /home/wjl/github/tfos/output_data/mnist/tfr/train \
-                        --model_dir /home/wjl/github/tfos/output_data/model_dir
+                        --input_path /home/wjl/github/tfos/data/mnist/tfr/train \
+                        --model_dir /home/wjl/github/tfos/data/model_dir
 
     yarn schema execute:
         spark-submit    --master yarn \
@@ -50,7 +50,7 @@ import os
 from deep_insight import ROOT_PATH
 from deep_insight.base import lrn
 from deep_insight.data.read_mnist import ReadMnist
-from deep_insight.layers import Dense, Dropout
+from deep_insight.layers.core import Dense, Dropout
 from deep_insight.model.inference import InferenceModel
 from deep_insight.model.train import TrainModel
 from deep_insight.optimizers.optimizer import Optimizer
@@ -58,11 +58,11 @@ from deep_insight.optimizers.optimizer import Optimizer
 # load data
 output_data_name = "<#zzjzRddName#>_data"
 # build model
-Dense(lrn(), 512, activation='relu', input_dim=784).run()
-Dropout(lrn(), 0.2).run()
-Dense(lrn(), 512, activation='relu').run()
-Dropout(lrn(), 0.2).run()
-Dense(lrn(), 10, activation='softmax').run()
+Dense(lrn(), '512', activation='relu', input_shape='784').run()
+Dropout(lrn(), '0.2').run()
+Dense(lrn(), '512', activation='relu').run()
+Dropout(lrn(), '0.2').run()
+Dense(lrn(), '10', activation='softmax').run()
 
 # compile model
 Optimizer(lrn(), 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()

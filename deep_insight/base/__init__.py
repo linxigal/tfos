@@ -7,13 +7,13 @@
 """
 
 from deep_insight import sqlc, sc
-from deep_insight.base.base import Base, inputRDD, outputRDD, print_pretty, lrn, sm
+from deep_insight.base.base import Base, inputRDD, outputRDD, print_pretty, lrn
 from deep_insight.base.common import get_model_config, model2df, dict2df
 from deep_insight.base.summary import SummaryLayer
 
 __all__ = [
     'sc', 'sqlc',
-    'Base', 'inputRDD', 'outputRDD', 'print_pretty', 'lrn', 'sm',
+    'Base', 'inputRDD', 'outputRDD', 'print_pretty', 'lrn',
     'get_model_config', 'model2df', 'dict2df',
     'SummaryLayer',
 ]

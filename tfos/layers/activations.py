@@ -10,12 +10,12 @@ from tensorflow.python.keras.layers import Activation, LeakyReLU, PReLU, ELU, Th
 from tfos.base import BaseLayer, ext_exception
 
 
-class ActivationLayer(BaseLayer):
-    __doc__ = Activation.__doc__
-
-    @ext_exception("Activation Layer")
-    def add(self, activation, **kwargs):
-        return self._add_layer(Activation(activation, **kwargs))
+# class ActivationLayer(BaseLayer):
+#     __doc__ = Activation.__doc__
+#
+#     @ext_exception("Activation Layer")
+#     def add(self, activation, **kwargs):
+#         return self._add_layer(Activation(activation, **kwargs))
 
 
 class LeakyReLULayer(BaseLayer):
