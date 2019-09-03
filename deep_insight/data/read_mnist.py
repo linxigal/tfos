@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 _*-  
 """
-:Author :weijinlong
+:Author : weijinlong
 :Time   : 2019/6/17 10:37
 :File   : read_mnist.py
 """
@@ -24,7 +24,7 @@ class ReadMnist(Base):
         data_format = param.get('format')
         input_path = param.get('input_path')[0]['path']
         output_df = DataSet(sc).read_data(input_path, data_format=data_format)
-        outputRDD('<#zzjzRddName#>_data', output_df)
+        outputRDD('<#zzjzRddName#>_mnist', output_df)
 
 
 if __name__ == "__main__":
