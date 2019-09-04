@@ -9,6 +9,7 @@
 import unittest
 
 from deep_insight.base import *
+from deep_insight.layers.input import InputLayer
 
 
 class Masking(Base):
@@ -42,9 +43,8 @@ class Masking(Base):
             对于指定的列，使用该值进行覆盖
     """
 
-    def __init__(self, input_prev_layers, mask_value='0', input_shape=None):
+    def __init__(self, mask_value='0', input_shape=None):
         super(Masking, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('mask_value', mask_value)
         self.p('input_shape', input_shape)
 
@@ -85,9 +85,8 @@ class Dropout(Base):
 
     """
 
-    def __init__(self, input_prev_layers, rate, noise_shape=None, seed=None):
+    def __init__(self, rate, noise_shape=None, seed=None):
         super(Dropout, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('rate', rate)
         self.p('noise_shape', noise_shape)
         self.p('seed', seed)
@@ -101,6 +100,7 @@ class Dropout(Base):
         rate = param.get("rate")
         noise_shape = param.get("noise_shape", "")
         seed = param.get("seed", "")
+        print(input_prev_layers)
 
         # 必填参数
         kwargs = dict(rate=float(rate))
@@ -135,9 +135,8 @@ class SpatialDropout1D(Base):
             0 到 1 之间的浮点数。需要丢弃的输入比例。
     """
 
-    def __init__(self, input_prev_layers, rate):
+    def __init__(self, rate):
         super(SpatialDropout1D, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('rate', rate)
 
     def run(self):
@@ -182,9 +181,8 @@ class SpatialDropout2D(Base):
 
     """
 
-    def __init__(self, input_prev_layers, rate, data_format=None):
+    def __init__(self, rate, data_format=None):
         super(SpatialDropout2D, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('rate', rate)
         self.p('data_format', data_format)
 
@@ -232,9 +230,8 @@ class SpatialDropout3D(Base):
         中找到它。如果你从未设置过它，那么它将是 channels_last
     """
 
-    def __init__(self, input_prev_layers, rate, data_format=None):
+    def __init__(self, rate, data_format=None):
         super(SpatialDropout3D, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('rate', rate)
         self.p('data_format', data_format)
 
@@ -275,9 +272,8 @@ class Activation(Base):
 
     """
 
-    def __init__(self, input_prev_layers, activation):
+    def __init__(self, activation):
         super(Activation, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('activation', activation)
 
     def run(self):
@@ -332,9 +328,8 @@ class Reshape(Base):
     ```
     """
 
-    def __init__(self, input_prev_layers, target_shape, input_shape=None):
+    def __init__(self, target_shape, input_shape=None):
         super(Reshape, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('target_shape', target_shape)
         self.p('input_shape', input_shape)
 
@@ -384,9 +379,8 @@ class Permute(Base):
 
     """
 
-    def __init__(self, input_prev_layers, dims, input_shape=None):
+    def __init__(self, dims, input_shape=None):
         super(Permute, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('dims', dims)
         self.p('input_shape', input_shape)
 
@@ -434,9 +428,8 @@ class Flatten(Base):
     ```
     """
 
-    def __init__(self, input_prev_layers, data_format=None):
+    def __init__(self, data_format=None):
         super(Flatten, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('data_format', data_format)
 
     def run(self):
@@ -486,9 +479,8 @@ class RepeatVector(Base):
         3D 张量，尺寸为 (num_samples, n, features)。
     """
 
-    def __init__(self, input_prev_layers, n):
+    def __init__(self, n):
         super(RepeatVector, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('n', n)
 
     def run(self):
@@ -557,9 +549,8 @@ class Lambda(Base):
         由 output_shape 参数指定 (或者在使用 TensorFlow 时，自动推理得到)。
     """
 
-    def __init__(self, input_prev_layers, function, output_shape=None, mask=None, arguments=None, input_shape=None):
+    def __init__(self, function, output_shape=None, mask=None, arguments=None, input_shape=None):
         super(Lambda, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('function', function)
         self.p('output_shape', output_shape)
         self.p('mask', mask)
@@ -641,9 +632,9 @@ class Dense(Base):
             运用到偏置向量的约束函数
     """
 
-    def __init__(self, input_prev_layers, units,
+    def __init__(self, units,
                  activation=None,
-                 use_bias=True,
+                 use_bias='True',
                  kernel_initializer="glorot_uniform",
                  bias_initializer="zeros",
                  kernel_regularizer=None,
@@ -653,10 +644,9 @@ class Dense(Base):
                  bias_constraint=None,
                  input_shape=None):
         super(Dense, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('units', units)
         self.p('activation', activation)
-        self.p('use_bias', str(use_bias))
+        self.p('use_bias', use_bias)
         self.p('kernel_initializer', kernel_initializer)
         self.p('bias_initializer', bias_initializer)
         self.p('kernel_regularizer', kernel_regularizer)
@@ -733,9 +723,8 @@ class ActivityRegularization(Base):
         与输入相同。
     """
 
-    def __init__(self, input_prev_layers, l1='0', l2='0', input_shape=None):
+    def __init__(self, l1='0', l2='0', input_shape=None):
         super(ActivityRegularization, self).__init__()
-        self.p('input_prev_layers', input_prev_layers)
         self.p('l1', l1)
         self.p('l2', l2)
         self.p('input_shape', input_shape)
@@ -761,83 +750,86 @@ class ActivityRegularization(Base):
         outputRDD('<#zzjzRddName#>_ActivityRegularization', output_df)
 
 
-class TestCore(unittest.TestCase):
+class TestCoreSequence(unittest.TestCase):
+
+    def setUp(self) -> None:
+        reset()
 
     @unittest.skip('')
     def test_masking(self):
-        Masking(lrn(), input_shape='2,10').run()
-        Masking(lrn()).run()
-        Masking(lrn()).run()
-        SummaryLayer(lrn()).run()
+        Masking(input_shape='2,10').run()
+        Masking().run()
+        Masking().run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_dropout(self):
-        Dense(lrn(), '512', input_shape='784').run()
-        Dropout(lrn(), '0.01').run()
-        Dropout(lrn(), '0.01').run()
-        Dropout(lrn(), '0.01').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='784').run()
+        Dropout('0.01').run()
+        Dropout('0.01').run()
+        Dropout('0.01').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_spatial_dropout_1d(self):
-        Dense(lrn(), '512', input_shape='32,784').run()
-        SpatialDropout1D(lrn(), '0.01').run()
-        SpatialDropout1D(lrn(), '0.01').run()
-        SpatialDropout1D(lrn(), '0.01').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='32,784').run()
+        SpatialDropout1D('0.01').run()
+        SpatialDropout1D('0.01').run()
+        SpatialDropout1D('0.01').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_spatial_dropout_2d(self):
-        Dense(lrn(), '512', input_shape='32,64,784').run()
-        SpatialDropout2D(lrn(), '0.01').run()
-        SpatialDropout2D(lrn(), '0.01').run()
-        SpatialDropout2D(lrn(), '0.01').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='32,64,784').run()
+        SpatialDropout2D('0.01').run()
+        SpatialDropout2D('0.01').run()
+        SpatialDropout2D('0.01').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_spatial_dropout_3d(self):
-        Dense(lrn(), '512', input_shape='32,64,128,784').run()
-        SpatialDropout3D(lrn(), '0.01').run()
-        SpatialDropout3D(lrn(), '0.01').run()
-        SpatialDropout3D(lrn(), '0.01').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='32,64,128,784').run()
+        SpatialDropout3D('0.01').run()
+        SpatialDropout3D('0.01').run()
+        SpatialDropout3D('0.01').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_activation(self):
-        Dense(lrn(), '512', input_shape='784').run()
-        Activation(lrn(), activation='relu').run()
-        Activation(lrn(), activation='relu').run()
-        Activation(lrn(), activation='relu').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='784').run()
+        Activation(activation='relu').run()
+        Activation(activation='relu').run()
+        Activation(activation='relu').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_reshape(self):
-        Reshape(lrn(), '4,6', input_shape='24').run()
-        Reshape(lrn(), '3,8').run()
-        Reshape(lrn(), '-1,3,4').run()
-        SummaryLayer(lrn()).run()
+        Reshape('4,6', input_shape='24').run()
+        Reshape('3,8').run()
+        Reshape('-1,3,4').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_permute(self):
-        Permute(lrn(), '2,1,3', '10,64,128').run()
-        Permute(lrn(), '1,3,2').run()
-        Permute(lrn(), '2,1,3').run()
-        SummaryLayer(lrn()).run()
+        Permute('2,1,3', '10,64,128').run()
+        Permute('1,3,2').run()
+        Permute('2,1,3').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_flatten(self):
-        Dense(lrn(), '32', input_shape='10,64,128').run()
-        Flatten(lrn()).run()
-        Flatten(lrn()).run()
-        SummaryLayer(lrn()).run()
+        Dense('32', input_shape='10,64,128').run()
+        Flatten().run()
+        Flatten().run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_repeat_vector(self):
-        Dense(lrn(), '32', input_shape='64').run()
-        RepeatVector(lrn(), '3').run()
-        SummaryLayer(lrn()).run()
+        Dense('32', input_shape='64').run()
+        RepeatVector('3').run()
+        SummaryLayer().run()
 
-    # @unittest.skip('')
+    @unittest.skip('')
     def test_lambda(self):
         from tensorflow.python.keras import backend as K
 
@@ -848,23 +840,146 @@ class TestCore(unittest.TestCase):
             neg = K.relu(-x)
             return K.concatenate([pos, neg], axis=1)
 
-        Dense(lrn(), '32', input_shape='10,64').run()
-        Lambda(lrn(), antirectifier).run()
-        SummaryLayer(lrn()).run()
+        Dense('32', input_shape='10,64').run()
+        Lambda(antirectifier).run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_dense(self):
-        Dense(lrn(), '512', input_shape='784').run()
-        Dense(lrn(), '256').run()
-        Dense(lrn(), '10').run()
-        SummaryLayer(lrn()).run()
+        Dense('512', input_shape='784').run()
+        Dense('512').run()
+        Dense('256').run()
+        Dense('10').run()
+        SummaryLayer().run()
 
     @unittest.skip('')
     def test_activity_regularization(self):
         # l1,l2不能同时为0
-        ActivityRegularization(lrn(), '0.1', '0.5', input_shape='10,64').run()
-        ActivityRegularization(lrn(), '0.6', '0.2').run()
-        SummaryLayer(lrn()).run()
+        ActivityRegularization('0.1', '0.5', input_shape='10,64').run()
+        ActivityRegularization('0.6', '0.2').run()
+        SummaryLayer().run()
+
+
+class TestCoreNetWork(unittest.TestCase):
+
+    def tearDown(self) -> None:
+        reset()
+
+    @unittest.skip('')
+    def test_masking(self):
+        InputLayer('2,10').run()
+        Masking().run()
+        Masking().run()
+        Masking().run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_dropout(self):
+        InputLayer('784').run()
+        Dense('512').run()
+        Dropout('0.01').run()
+        Dropout('0.01').run()
+        Dropout('0.01').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_spatial_dropout_1d(self):
+        InputLayer('32,784').run()
+        Dense('512').run()
+        SpatialDropout1D('0.01').run()
+        SpatialDropout1D('0.01').run()
+        SpatialDropout1D('0.01').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_spatial_dropout_2d(self):
+        InputLayer('32,64,784').run()
+        Dense('512').run()
+        SpatialDropout2D('0.01').run()
+        SpatialDropout2D('0.01').run()
+        SpatialDropout2D('0.01').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_spatial_dropout_3d(self):
+        InputLayer('32,64,128,784').run()
+        Dense('512').run()
+        SpatialDropout3D('0.01').run()
+        SpatialDropout3D('0.01').run()
+        SpatialDropout3D('0.01').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_activation(self):
+        InputLayer('784').run()
+        Dense('512').run()
+        Activation(activation='relu').run()
+        Activation(activation='relu').run()
+        Activation(activation='relu').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_reshape(self):
+        InputLayer('24').run()
+        Reshape('4,6').run()
+        Reshape('3,8').run()
+        Reshape('-1,3,4').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_permute(self):
+        InputLayer('10,64,128').run()
+        Permute('2,1,3').run()
+        Permute('1,3,2').run()
+        Permute('2,1,3').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_flatten(self):
+        InputLayer('10,64,128').run()
+        Dense('32').run()
+        Flatten().run()
+        Flatten().run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_repeat_vector(self):
+        InputLayer('64').run()
+        Dense('32').run()
+        RepeatVector('3').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_lambda(self):
+        from tensorflow.python.keras import backend as K
+
+        def antirectifier(x):
+            x -= K.mean(x, axis=1, keepdims=True)
+            x = K.l2_normalize(x, axis=1)
+            pos = K.relu(x)
+            neg = K.relu(-x)
+            return K.concatenate([pos, neg], axis=1)
+
+        InputLayer('10,64').run()
+        Dense('32').run()
+        Lambda(antirectifier).run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_dense(self):
+        InputLayer('784').run()
+        Dense('512').run()
+        Dense('256').run()
+        Dense('10').run()
+        SummaryLayer().run()
+
+    @unittest.skip('')
+    def test_activity_regularization(self):
+        # l1,l2不能同时为0
+        InputLayer('10,64').run()
+        ActivityRegularization('0.1', '0.5').run()
+        ActivityRegularization('0.6', '0.2').run()
+        SummaryLayer().run()
 
 
 if __name__ == '__main__':

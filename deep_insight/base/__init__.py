@@ -7,13 +7,17 @@
 """
 
 from deep_insight import sqlc, sc
-from deep_insight.base.base import Base, inputRDD, outputRDD, print_pretty, lrn
+from deep_insight.base.base import *
 from deep_insight.base.common import get_model_config, model2df, dict2df
 from deep_insight.base.summary import SummaryLayer
 
 __all__ = [
+    # spark global variable
     'sc', 'sqlc',
-    'Base', 'inputRDD', 'outputRDD', 'print_pretty', 'lrn',
+    # global method and variable
+    'Base', 'inputRDD', 'outputRDD', 'lrn', "BRANCH", "BRANCH_1", "BRANCH_2",  "DATA_BRANCH", 'reset',
+    # format convert
     'get_model_config', 'model2df', 'dict2df',
+    # model schema
     'SummaryLayer',
 ]

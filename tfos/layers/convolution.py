@@ -15,19 +15,38 @@ class Conv1DLayer(BaseLayer):
     __doc__ = Conv2D.__doc__
 
     @ext_exception("Convolution1D Layer")
-    def add(self, filters, kernel_size,
+    def add(self,
+            filters,
+            kernel_size,
             strides=1,
             padding='valid',
             data_format='channels_last',
             dilation_rate=1,
             activation=None,
-            use_bias=True, **kwargs):
-        return self._add_layer(Conv1D(filters, kernel_size,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            **kwargs):
+        return self._add_layer(Conv1D(filters,
+                                      kernel_size,
                                       strides=strides,
                                       padding=padding,
                                       data_format=data_format,
                                       dilation_rate=dilation_rate,
+                                      activation=activation,
                                       use_bias=use_bias,
+                                      kernel_initializer=kernel_initializer,
+                                      bias_initializer=bias_initializer,
+                                      kernel_regularizer=kernel_regularizer,
+                                      bias_regularizer=bias_regularizer,
+                                      activity_regularizer=activity_regularizer,
+                                      kernel_constraint=kernel_constraint,
+                                      bias_constraint=bias_constraint,
                                       **kwargs))
 
 
@@ -35,20 +54,38 @@ class Conv2DLayer(BaseLayer):
     __doc__ = Conv2D.__doc__
 
     @ext_exception("Convolution2D Layer")
-    def add(self, filters, kernel_size,
+    def add(self,
+            filters,
+            kernel_size,
             strides=(1, 1),
             padding='valid',
             data_format=None,
             dilation_rate=(1, 1),
             activation=None,
-            use_bias=True, **kwargs):
-        return self._add_layer(Conv2D(filters, kernel_size,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            **kwargs):
+        return self._add_layer(Conv2D(filters,
+                                      kernel_size,
                                       strides=strides,
                                       padding=padding,
                                       data_format=data_format,
                                       dilation_rate=dilation_rate,
                                       activation=activation,
                                       use_bias=use_bias,
+                                      kernel_initializer=kernel_initializer,
+                                      bias_initializer=bias_initializer,
+                                      kernel_regularizer=kernel_regularizer,
+                                      bias_regularizer=bias_regularizer,
+                                      activity_regularizer=activity_regularizer,
+                                      kernel_constraint=kernel_constraint,
+                                      bias_constraint=bias_constraint,
                                       **kwargs))
 
 
@@ -56,20 +93,38 @@ class Conv3DLayer(BaseLayer):
     __doc__ = Conv3D.__doc__
 
     @ext_exception("Convolution3D Layer")
-    def add(self, filters, kernel_size,
+    def add(self,
+            filters,
+            kernel_size,
             strides=(1, 1, 1),
             padding='valid',
             data_format=None,
             dilation_rate=(1, 1, 1),
             activation=None,
-            use_bias=True, **kwargs):
-        return self._add_layer(Conv3D(filters, kernel_size,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            **kwargs):
+        return self._add_layer(Conv3D(filters,
+                                      kernel_size,
                                       strides=strides,
                                       padding=padding,
                                       data_format=data_format,
                                       dilation_rate=dilation_rate,
                                       activation=activation,
                                       use_bias=use_bias,
+                                      kernel_initializer=kernel_initializer,
+                                      bias_initializer=bias_initializer,
+                                      kernel_regularizer=kernel_regularizer,
+                                      bias_regularizer=bias_regularizer,
+                                      activity_regularizer=activity_regularizer,
+                                      kernel_constraint=kernel_constraint,
+                                      bias_constraint=bias_constraint,
                                       **kwargs))
 
 
@@ -77,15 +132,26 @@ class Conv2DTransposeLayer(BaseLayer):
     __doc__ = Conv2DTranspose.__doc__
 
     @ext_exception("Convolution2DTranspose Layer")
-    def add(self, filters, kernel_size,
+    def add(self,
+            filters,
+            kernel_size,
             strides=(1, 1),
             padding='valid',
             output_padding=None,
             data_format=None,
             dilation_rate=(1, 1),
             activation=None,
-            use_bias=True, **kwargs):
-        return self._add_layer(Conv2DTranspose(filters, kernel_size,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            **kwargs):
+        return self._add_layer(Conv2DTranspose(filters,
+                                               kernel_size,
                                                strides=strides,
                                                padding=padding,
                                                output_padding=output_padding,
@@ -93,6 +159,13 @@ class Conv2DTransposeLayer(BaseLayer):
                                                dilation_rate=dilation_rate,
                                                activation=activation,
                                                use_bias=use_bias,
+                                               kernel_initializer=kernel_initializer,
+                                               bias_initializer=bias_initializer,
+                                               kernel_regularizer=kernel_regularizer,
+                                               bias_regularizer=bias_regularizer,
+                                               activity_regularizer=activity_regularizer,
+                                               kernel_constraint=kernel_constraint,
+                                               bias_constraint=bias_constraint,
                                                **kwargs))
 
 
@@ -100,18 +173,35 @@ class Conv3DTransposeLayer(BaseLayer):
     __doc__ = Conv3DTranspose.__doc__
 
     @ext_exception("Convolution3DTranspose Layer")
-    def add(self, filters, kernel_size,
+    def add(self, filters,
+            kernel_size,
             strides=(1, 1, 1),
             padding='valid',
             output_padding=None,
             data_format=None,
             activation=None,
-            use_bias=True, **kwargs):
-        return self._add_layer(Conv3DTranspose(filters, kernel_size,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            **kwargs):
+        return self._add_layer(Conv3DTranspose(filters,
+                                               kernel_size,
                                                strides=strides,
                                                padding=padding,
                                                output_padding=output_padding,
                                                data_format=data_format,
                                                activation=activation,
                                                use_bias=use_bias,
+                                               kernel_initializer=kernel_initializer,
+                                               bias_initializer=bias_initializer,
+                                               kernel_regularizer=kernel_regularizer,
+                                               bias_regularizer=bias_regularizer,
+                                               activity_regularizer=activity_regularizer,
+                                               kernel_constraint=kernel_constraint,
+                                               bias_constraint=bias_constraint,
                                                **kwargs))

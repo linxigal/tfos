@@ -12,7 +12,7 @@ import numpy as np
 import tensorflow as tf
 from pyspark.sql import Row
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
-from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.models import Sequential, Model
 from tensorflowonspark import TFNode
 
 
@@ -40,6 +40,7 @@ class Worker(object):
         self.save_model_file = os.path.join(self.save_dir, 'model.weight')
 
         self.model_config = json.loads(model_rdd.first().model_config)
+        self.is_sequence = model_rdd.first().is_sequence
         self.compile_config = json.loads(model_rdd.first().compile_config)
 
     def generate_rdd_data(self):
@@ -59,7 +60,10 @@ class Worker(object):
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            model = Sequential.from_config(self.model_config)
+            if self.is_sequence:
+                model = Sequential.from_config(self.model_config)
+            else:
+                model = Model.from_config(self.model_config)
             model.compile(**self.compile_config)
             model.summary()
             self.model = model

@@ -34,4 +34,4 @@ class OptimizerLayer(BaseLayer):
             'optimizer': optimizer,
             'metrics': check_metrics if check_metrics else None
         }
-        return self.model_rdd.withColumn("compile_config", lit(json.dumps(optimizer_params)))
+        return self._add_column("compile_config", lit(json.dumps(optimizer_params)))
