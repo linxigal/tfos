@@ -19,7 +19,7 @@ from deep_insight import ROOT_PATH
 from deep_insight.base import *
 from deep_insight.data.read_mnist import ReadMnist
 from deep_insight.layers.core import Dropout, Dense
-from deep_insight.optimizers import Optimizer
+from deep_insight.compile import Compile
 from deep_insight.layers.input import InputLayer
 
 
@@ -147,7 +147,7 @@ class TestModel(unittest.TestCase):
         Dropout('0.2').run()
         Dense('10', activation='softmax').run()
         # compile model
-        Optimizer('categorical_crossentropy', 'rmsprop', ['accuracy']).run()
+        Compile('categorical_crossentropy', 'rmsprop', ['accuracy']).run()
         # show network struct
         SummaryLayer().run()
 
