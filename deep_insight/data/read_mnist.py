@@ -26,7 +26,6 @@ class ReadMnist(Base):
         data_format = param.get('format')
         input_path = param.get('input_path')[0]['path']
         output_df = DataSet(sc).read_data(input_path, data_format=data_format)
-        # output_df.show()
         outputRDD('<#zzjzRddName#>_mnist', output_df)
 
 

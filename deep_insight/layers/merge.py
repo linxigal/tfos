@@ -23,8 +23,8 @@ class Add(Base):
     它接受一个张量的列表， 所有的张量必须有相同的输入尺寸， 然后返回一个张量（和输入张量尺寸相同）。
     """
 
-    def __init__(self):
-        super(Add, self).__init__()
+    def __init__(self, **kwargs):
+        super(Add, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -36,7 +36,6 @@ class Add(Base):
 
         model_rdd_1 = inputRDD(input_branch_1)
         model_rdd_2 = inputRDD(input_branch_2)
-
         output_df = AddL([model_rdd_1, model_rdd_2], sqlc=sqlc).add()
         outputRDD('<#zzjzRddName#>_Add', output_df)
 
@@ -49,8 +48,8 @@ class Subtract(Base):
     输出张量和输入张量尺寸相同。
     """
 
-    def __init__(self):
-        super(Subtract, self).__init__()
+    def __init__(self, **kwargs):
+        super(Subtract, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -74,8 +73,8 @@ class Multiply(Base):
     它接受一个张量的列表， 所有的张量必须有相同的输入尺寸， 然后返回一个张量（和输入张量尺寸相同）。
     """
 
-    def __init__(self):
-        super(Multiply, self).__init__()
+    def __init__(self, **kwargs):
+        super(Multiply, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -99,8 +98,8 @@ class Average(Base):
     它接受一个张量的列表， 所有的张量必须有相同的输入尺寸， 然后返回一个张量（和输入张量尺寸相同）。
     """
 
-    def __init__(self):
-        super(Average, self).__init__()
+    def __init__(self, **kwargs):
+        super(Average, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -124,8 +123,8 @@ class Maximum(Base):
     它接受一个张量的列表， 所有的张量必须有相同的输入尺寸， 然后返回一个张量（和输入张量尺寸相同）。
     """
 
-    def __init__(self):
-        super(Maximum, self).__init__()
+    def __init__(self, **kwargs):
+        super(Maximum, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -149,8 +148,8 @@ class Minimum(Base):
     它接受一个张量的列表， 所有的张量必须有相同的输入尺寸， 然后返回一个张量（和输入张量尺寸相同）。
     """
 
-    def __init__(self):
-        super(Minimum, self).__init__()
+    def __init__(self, **kwargs):
+        super(Minimum, self).__init__(**kwargs)
 
     def run(self):
         param = self.params
@@ -177,8 +176,8 @@ class Concatenate(Base):
         axis: 连接的轴
     """
 
-    def __init__(self, axis='-1'):
-        super(Concatenate, self).__init__()
+    def __init__(self, axis='-1', **kwargs):
+        super(Concatenate, self).__init__(**kwargs)
         self.p('axis', axis)
 
     def run(self):
@@ -212,8 +211,8 @@ class Dot(Base):
             是否在点积之前对即将进行点积的轴进行 L2 标准化。 如果设置成 True，那么输出两个样本之间的余弦相似值。
     """
 
-    def __init__(self, axes, normalize='False'):
-        super(Dot, self).__init__()
+    def __init__(self, axes, normalize='False', **kwargs):
+        super(Dot, self).__init__(**kwargs)
         self.p('axes', axes)
         self.p('normalize', normalize)
 
@@ -247,47 +246,55 @@ class TestMerge(unittest.TestCase):
         n2 = BRANCH_2
         # first branch
         InputLayer('784').b(n1).run()
-        Dense('256').b(n1).run()
-        Dropout('0.5').b(n1).run()
-        Dense('64').b(n1).run()
-        Dropout('0.2').b(n1).run()
+        Dense('256').run()
+        Dropout('0.5').run()
+        Dense('64').run()
+        Dropout('0.2').run()
 
         # second branch
         InputLayer('256').b(n2).run()
-        Dense('64').b(n2).run()
-        Dropout('0.5').b(n2).run()
+        Dense('64').run()
+        Dropout('0.5').run()
 
     def tearDown(self) -> None:
         reset()
 
+    # @unittest.skip("")
     def test_add(self):
         Add().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_subtract(self):
         Subtract().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_multiply(self):
         Multiply().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_average(self):
         Average().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_maximum(self):
         Maximum().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_minimum(self):
         Minimum().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_concatenate(self):
         Concatenate().b(3).run()
         SummaryLayer(3).run()
 
+    # @unittest.skip("")
     def test_dot(self):
         Dot('1').b(3).run()
         SummaryLayer(3).run()

@@ -60,12 +60,11 @@ class InputLayer(Base):
         from tfos.choices import BOOLEAN
 
         # param = json.loads('<#zzjzParam#>')
-        input_prev_layers = param.get("input_prev_layers")
+        input_prev_layers = param.get("input_prev_layers", '')
         input_shape = param.get("input_shape")
         batch_size = param.get("batch_size", "")
         dtype = param.get("dtype", "")
-        # input_tensor = param.get("input_tensor", "")
-        sparse = param.get("sparse", BOOLEAN[0])
+        sparse = param.get("sparse", BOOLEAN[1])
         name = param.get("name", "")
 
         # 必填参数
@@ -75,13 +74,13 @@ class InputLayer(Base):
             kwargs['batch_size'] = int(batch_size)
         if dtype:
             kwargs['dtype'] = dtype
-        kwargs['sparse'] = sparse
+        if sparse:
+            kwargs['sparse'] = True if sparse.lower() == 'true' else False
         if name:
             kwargs['name'] = name
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = InputLayer(model_rdd, sqlc=sqlc).add(**kwargs)
-        # output_df.show()
         outputRDD('<#zzjzRddName#>_Input', output_df)
 
 

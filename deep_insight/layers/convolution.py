@@ -129,14 +129,9 @@ class Convolution1D(Base):
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
         assert len(kernel_size) == 1, "Convolution1D kernel_size must be 1 dimension!"
-        kwargs = {
-            "filters": int(filters),
-            "kernel_size": kernel_size
-        }
+        kwargs = dict(filters=int(filters), kernel_size=kernel_size)
 
         if strides:
-            # strides = tuple([int(i) for i in strides.split(',') if i])
-            # assert len(strides) == 1, "parameter strides must be 1 dimension!"
             kwargs['strides'] = int(strides)
         if padding:
             kwargs['padding'] = padding
@@ -269,7 +264,7 @@ class Convolution2D(Base):
         param = self.params
 
         from tfos.layers import Conv2DLayer
-        from tfos.choices import ACTIVATIONS, BOOLEAN, PADDING
+        from tfos.choices import D_ACTIVATIONS, BOOLEAN, PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
@@ -279,7 +274,7 @@ class Convolution2D(Base):
         padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
         dilation_rate = param.get('dilation_rate', '1,1')
-        activation = param.get('activation', ACTIVATIONS[0])
+        activation = param.get('activation', D_ACTIVATIONS[0])
         use_bias = param.get('use_bias', BOOLEAN[0])
         kernel_initializer = param.get('kernel_initializer', 'glorot_uniform')
         bias_initializer = param.get('bias_initializer', 'zeros')
@@ -293,10 +288,7 @@ class Convolution2D(Base):
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
         assert len(kernel_size) == 2, "Convolution2D kernel_size must be 2 dimension!"
-        kwargs = {
-            "filters": int(filters),
-            "kernel_size": kernel_size
-        }
+        kwargs = dict(filters=int(filters), kernel_size=kernel_size)
 
         if strides:
             strides = tuple([int(i) for i in strides.split(',') if i])
@@ -456,10 +448,7 @@ class Convolution3D(Base):
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
         assert len(kernel_size) == 3, "Convolution3D kernel_size must be 3 dimension!"
-        kwargs = {
-            "filters": int(filters),
-            "kernel_size": kernel_size
-        }
+        kwargs = dict(filters=int(filters), kernel_size=kernel_size)
 
         if strides:
             strides = tuple([int(i) for i in strides.split(',') if i])
@@ -627,16 +616,12 @@ class Convolution2DTranspose(Base):
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
         assert len(kernel_size) == 2, "Convolution2DTranspose kernel_size must be 2 dimension!"
-        kwargs = {
-            "filters": int(filters),
-            "kernel_size": kernel_size
-        }
+        kwargs = dict(filters=int(filters), kernel_size=kernel_size)
 
         if strides:
             strides = tuple([int(i) for i in strides.split(',') if i])
             assert len(strides) == 2, "parameter strides must be 2 dimension!"
             kwargs['strides'] = strides
-
         if padding:
             kwargs['padding'] = padding
         if output_padding:
@@ -800,10 +785,7 @@ class Convolution3DTranspose(Base):
         # 必传参数
         kernel_size = tuple([int(i) for i in kernel_size.split(',') if i])
         assert len(kernel_size) == 3, "Convolution3DTranspose kernel_size must be 3 dimension!"
-        kwargs = {
-            "filters": int(filters),
-            "kernel_size": kernel_size
-        }
+        kwargs = dict(filters=int(filters), kernel_size=kernel_size)
 
         if strides:
             strides = tuple([int(i) for i in strides.split(',') if i])

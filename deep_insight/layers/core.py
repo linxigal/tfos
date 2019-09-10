@@ -55,7 +55,7 @@ class Masking(Base):
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         mask_value = param.get("mask_value", '0')
-        input_shape = param.get("input_shape", '0')
+        input_shape = param.get("input_shape", '')
 
         kwargs = {}
         if mask_value:
@@ -100,7 +100,6 @@ class Dropout(Base):
         rate = param.get("rate")
         noise_shape = param.get("noise_shape", "")
         seed = param.get("seed", "")
-        print(input_prev_layers)
 
         # 必填参数
         kwargs = dict(rate=float(rate))

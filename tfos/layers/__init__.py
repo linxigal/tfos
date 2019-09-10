@@ -12,6 +12,7 @@ from .core import *
 from .input import *
 from .merge import *
 from .pooling import *
+from .recurrent import *
 
 __all__ = [
     # input layer
@@ -28,4 +29,6 @@ __all__ = [
     "LeakyReLULayer", "PReLULayer", "ELULayer", "ThresholdedReLULayer", "SoftmaxLayer", "ReLULayer",
     # pooling layer
     "MaxPool1DLayer", "MaxPool2DLayer", "MaxPool3DLayer", "AvgPool1DLayer", "AvgPool2DLayer", "AvgPool3DLayer",
+    # rnn layer
+    "SimpleRNN", "GRU", "LSTM",
 ]

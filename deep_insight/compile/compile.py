@@ -38,7 +38,7 @@ class Compile(Base):
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         loss = param.get("loss", LOSSES[0])
-        optimizer = param.get('optimizer', OPTIMIZERS[0])
+        optimizer = param.get('optimizer', OPTIMIZERS[1])
         metrics = param.get('metrics', METRICS[0])
 
         model_rdd = inputRDD(input_prev_layers)
