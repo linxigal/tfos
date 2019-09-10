@@ -3,14 +3,14 @@
 """
 :Author :weijinlong
 :Time:  :2019/7/11 15:19
-:File   : optimizer.py
+:File   : compile.py
 """
 import json
 from pyspark.sql.functions import lit
 from tfos.base import *
 
 
-class OptimizerLayer(BaseLayer):
+class CompileLayer(BaseLayer):
 
     @ext_exception('optimizer layer')
     def add(self, loss, optimizer, metrics):

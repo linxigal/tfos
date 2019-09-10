@@ -12,3 +12,6 @@ PADDING = ['valid', 'same']
 D_ACTIVATIONS = ['不使用'] + valid_activations
 ACTIVATIONS = valid_activations
 LOSSES = valid_losses
+OPTIMIZERS = valid_optimizers
+METRICS = valid_metrics
+REGULARIZES = valid_regularizers

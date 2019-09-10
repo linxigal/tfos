@@ -53,7 +53,7 @@ from deep_insight.data.read_mnist import ReadMnist
 from deep_insight.layers.core import Dense, Dropout
 from deep_insight.model.model import InferenceModel
 from deep_insight.model.model import TrainModel
-from deep_insight.optimizers.optimizer import Optimizer
+from deep_insight.compile.compile import Compile
 
 # load data
 output_data_name = "<#zzjzRddName#>_data"
@@ -65,7 +65,7 @@ Dropout(lrn(), '0.2').run()
 Dense(lrn(), '10', activation='softmax').run()
 
 # compile model
-Optimizer(lrn(), 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
+Compile(lrn(), 'categorical_crossentropy', 'rmsprop', ['accuracy']).run()
 
 
 def train_model(input_path, format, cluster_size, num_ps, batch_size, epochs, model_dir, **kwargs):

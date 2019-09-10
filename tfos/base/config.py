@@ -49,7 +49,7 @@ valid_metrics = valid_losses + [
     'sparse_top_k_categorical_accuracy',
 ]
 
-# keras.optimizers
+# keras.compile
 valid_optimizers = [
     'sgd', 'SGD',
     'rmsprop', 'RMSprop',
