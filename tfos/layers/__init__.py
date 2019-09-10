@@ -6,17 +6,26 @@
 :File   : __init__.py.py
 """
 
-from .activations import LeakyReLULayer, PReLULayer, ELULayer, ThresholdedReLULayer, SoftmaxLayer, \
-    ReLULayer
-from .convolution import Conv1DLayer, Conv2DLayer, Conv3DLayer, Conv2DTransposeLayer, Conv3DTransposeLayer
-from .core import MaskingLayer, DropoutLayer, SpatialDropout1DLayer, SpatialDropout2DLayer, SpatialDropout3DLayer, \
-    ActivationLayer, ReshapeLayer, PermuteLayer, FlattenLayer, RepeatVectorLayer, LambdaLayer, DenseLayer, \
-    ActivityRegularizationLayer
-from .pooling import MaxPool1DLayer, MaxPool2DLayer, MaxPool3DLayer, AvgPool1DLayer, AvgPool2DLayer, AvgPool3DLayer
+from .activations import *
+from .convolution import *
+from .core import *
+from .input import *
+from .merge import *
+from .pooling import *
 
-# __all__ = [
-#     "Conv1DLayer", "Conv2DLayer", "Conv3DLayer", "Conv2DTransposeLayer", "Conv3DTransposeLayer",
-#     "DenseLayer", "DropoutLayer",
-#     "LeakyReLULayer", "PReLULayer", "ELULayer", "ThresholdedReLULayer", "SoftmaxLayer", "ReLULayer",
-#     "MaxPool1DLayer", "MaxPool2DLayer", "MaxPool3DLayer", "AvgPool1DLayer", "AvgPool2DLayer", "AvgPool3DLayer",
-# ]
+__all__ = [
+    # input layer
+    "InputLayer",
+    # core layer
+    "MaskingLayer", "DropoutLayer", "SpatialDropout1DLayer", "SpatialDropout2DLayer", "SpatialDropout3DLayer",
+    "ActivationLayer", "ReshapeLayer", "PermuteLayer", "FlattenLayer", "RepeatVectorLayer", "LambdaLayer",
+    "DenseLayer", "ActivityRegularizationLayer",
+    # merge layer
+    "AddL", "SubtractL", "MultiplyL", "AverageL", "MaximumL", "MinimumL", "ConcatenateL", "DotL",
+    # convolution layer
+    "Conv1DLayer", "Conv2DLayer", "Conv3DLayer", "Conv2DTransposeLayer", "Conv3DTransposeLayer",
+    # activation layer
+    "LeakyReLULayer", "PReLULayer", "ELULayer", "ThresholdedReLULayer", "SoftmaxLayer", "ReLULayer",
+    # pooling layer
+    "MaxPool1DLayer", "MaxPool2DLayer", "MaxPool3DLayer", "AvgPool1DLayer", "AvgPool2DLayer", "AvgPool3DLayer",
+]

@@ -5,17 +5,9 @@
 :Time:  : 2019/8/8 14:09
 :File   : activations.py
 """
-from tensorflow.python.keras.layers import Activation, LeakyReLU, PReLU, ELU, ThresholdedReLU, Softmax, ReLU
+from tensorflow.python.keras.layers import LeakyReLU, PReLU, ELU, ThresholdedReLU, Softmax, ReLU
 
 from tfos.base import BaseLayer, ext_exception
-
-
-# class ActivationLayer(BaseLayer):
-#     __doc__ = Activation.__doc__
-#
-#     @ext_exception("Activation Layer")
-#     def add(self, activation, **kwargs):
-#         return self._add_layer(Activation(activation, **kwargs))
 
 
 class LeakyReLULayer(BaseLayer):

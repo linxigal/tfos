@@ -7,13 +7,13 @@
 """
 import json
 
-from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.models import Sequential, Model
 
 from deep_insight.base import *
 
 
 class SummaryLayer(Base):
-    def __init__(self, name):
+    def __init__(self, name=BRANCH):
         super(SummaryLayer, self).__init__()
         self.p('name', name)
 
@@ -23,9 +23,14 @@ class SummaryLayer(Base):
         name = params.get('name')
         model_rdd = inputRDD(name)
 
-        model_config = {}
-        if model_rdd:
-            model_config = json.loads(model_rdd.first().model_config)
-        model = Sequential.from_config(model_config)
+        if not model_rdd:
+            raise ValueError("In Summary model_rdd cannot be empty！")
+
+        model_config = json.loads(model_rdd.first().model_config)
+        if model_rdd.first().is_sequence:
+            model = Sequential.from_config(model_config)
+        else:
+            model = Model.from_config(model_config)
+
         model.summary()
-        outputRDD('<#zzjzRddName#>_summary', model_rdd)
+        outputRDD('<#zzjzRddName#>_Summary', model_rdd)
