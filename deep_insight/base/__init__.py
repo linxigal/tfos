@@ -15,7 +15,7 @@ __all__ = [
     # spark global variable
     'sc', 'sqlc',
     # global method and variable
-    'Base', 'inputRDD', 'outputRDD', 'lrn', "BRANCH", "BRANCH_1", "BRANCH_2",  "DATA_BRANCH", 'reset',
+    'Base', 'inputRDD', 'outputRDD', 'BRANCH', "BRANCH_1", "BRANCH_2", "DATA_BRANCH", 'MODEL_BRANCH', 'reset',
     # format convert
     'get_model_config', 'model2df', 'dict2df',
     # model schema

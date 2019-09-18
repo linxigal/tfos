@@ -5,7 +5,7 @@
 :File    : __init__.py.py
 """
 
-VERSION = (0, 2, 1)
+VERSION = (0, 2, 3)
 
 import os
 from tfos.tfos import TFOS

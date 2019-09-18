@@ -9,6 +9,7 @@
 import json
 
 import numpy as np
+import tensorflow as tf
 from pyspark.sql import Row
 from tensorflow.python.keras.models import Sequential, Model
 
@@ -35,10 +36,12 @@ def get_model_config(model_rdd, can_first_layer=True, input_dim=None):
     return model_config
 
 
-class NumpyEncoder(json.JSONEncoder):
+class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, tf.float32):
+            return float(obj)
         return json.JSONEncoder.default(self, obj)
 
 
@@ -69,7 +72,7 @@ class BaseLayer(object):
             'layer_name': self.__layer_name,
             "is_sequence": self.__is_sequence,
             "layer_num": self.__layer_num,
-            name: json.dumps(model.get_config(), cls=NumpyEncoder)
+            name: json.dumps(model.get_config(), cls=CustomEncoder)
         }
         return self.__sqlc.createDataFrame([Row(**data)])
 
@@ -89,6 +92,7 @@ class BaseLayer(object):
             self.__layer_num += len(model_config.get('layers', []))
         model = Sequential.from_config(model_config)
         model.add(layer)
+        self.__layer_num += 1
         return self.model2df(model)
 
     def __add_network_layer(self, layer):
@@ -110,6 +114,7 @@ class BaseLayer(object):
                 outputs.extend(input_model.outputs)
             outputs = outputs[0] if len(outputs) == 1 else outputs
             output_model = Model(inputs=inputs, outputs=layer(outputs))
+            self.__layer_num += 1
         return self.model2df(output_model)
 
     def _add_layer(self, layer):

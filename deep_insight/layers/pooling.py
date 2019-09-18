@@ -48,12 +48,13 @@ class MaxPool1D(Base):
         param = self.params
 
         from tfos.layers import MaxPool1DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', 'channels_last')
 
         kwargs = {}
@@ -110,12 +111,13 @@ class AvgPool1D(Base):
         param = self.params
 
         from tfos.layers import AvgPool1DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
 
         kwargs = {}
@@ -175,12 +177,13 @@ class MaxPool2D(Base):
         param = self.params
 
         from tfos.layers import MaxPool2DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2,2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
 
         kwargs = {}
@@ -244,12 +247,13 @@ class AvgPool2D(Base):
         param = self.params
 
         from tfos.layers import AvgPool2DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2,2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
 
         kwargs = {}
@@ -312,12 +316,13 @@ class MaxPool3D(Base):
         param = self.params
 
         from tfos.layers import AvgPool3DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2,2,2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
 
         kwargs = {}
@@ -381,12 +386,13 @@ class AvgPool3D(Base):
         param = self.params
 
         from tfos.layers import AvgPool3DLayer
+        from tfos.choices import PADDING
 
         # param = json.loads('<#zzjzParam#>')
         input_prev_layers = param.get("input_prev_layers")
         pool_size = param.get('pool_size', '2,2,2')  # integer
         strides = param.get('strides', '')
-        padding = param.get('padding', 'valid')
+        padding = param.get('padding', PADDING[0])
         data_format = param.get('data_format', '')
 
         kwargs = {}

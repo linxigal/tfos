@@ -6,7 +6,6 @@
 :File       : base.py
 """
 
-import json
 from collections import defaultdict
 
 GLOBAL_RDD = defaultdict(dict)
@@ -14,6 +13,7 @@ BRANCH = -1
 BRANCH_1 = 1
 BRANCH_2 = 2
 DATA_BRANCH = 0
+MODEL_BRANCH = 1
 GP = {}
 
 
@@ -31,29 +31,29 @@ def reset():
     GLOBAL_RDD.clear()
 
 
-def lrn(branch=-1):
-    if branch != -1:
-        global BRANCH
-        BRANCH = branch
-    return GP.get(branch)
-
-
-def print_pretty(name=None):
-    res = {}
-    data = GLOBAL_RDD.get(name if name else lrn())
-    if data:
-        res = json.loads(data.first().model_config)
-    print(json.dumps(res, indent=4))
-
-
 class Base(object):
 
-    def __init__(self):
+    def __init__(self, input_prev_layers=None,
+                 input_rdd_name=None,
+                 input_branch_1=None,
+                 input_branch_2=None):
+
+        if self.__class__.__name__ == 'InputLayer':
+            model_branch = None
+        elif input_prev_layers is None:
+            model_branch = BRANCH
+        else:
+            model_branch = input_prev_layers
+
+        data_branch = DATA_BRANCH if input_rdd_name is None else input_rdd_name
+        branch_1 = BRANCH_1 if input_branch_1 is None else input_branch_1
+        branch_2 = BRANCH_2 if input_branch_2 is None else input_branch_2
+
         self.params = dict(
-            input_prev_layers=-2 if self.__class__.__name__ == 'InputLayer' else BRANCH,
-            input_branch_1=BRANCH_1,
-            input_branch_2=BRANCH_2,
-            input_rdd_name=DATA_BRANCH
+            input_prev_layers=model_branch,
+            input_branch_1=branch_1,
+            input_branch_2=branch_2,
+            input_rdd_name=data_branch
         )
 
     def run(self):
@@ -62,22 +62,9 @@ class Base(object):
     def p(self, key, value):
         self.params[key] = value
 
-    def branch(self, branch=None, n1=None, n2=None):
-        if branch is not None:
-            global BRANCH
-            BRANCH = self.valid_branch(branch)
-        elif n1 is not None:
-            global BRANCH_1
-            BRANCH_1 = self.valid_branch(n1)
-        elif n2 is not None:
-            global BRANCH_2
-            BRANCH_2 = self.valid_branch(n2)
+    def branch(self, branch):
+        global BRANCH
+        BRANCH = branch
         return self
 
     b = branch
-
-    @staticmethod
-    def valid_branch(branch):
-        if branch <= 0:
-            raise ValueError("custom model branch must positive!")
-        return branch

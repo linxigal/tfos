@@ -6,6 +6,7 @@
 :File   : file_manager.py
 """
 
+import unittest
 import hdfs
 import tensorflow as tf
 
@@ -35,3 +36,18 @@ def makedirs(path):
         # HDFSClient().makedirs(path)
         # else:
         tf.gfile.MakeDirs(path)
+
+
+class TestHDFSOP(unittest.TestCase):
+
+    @unittest.skip("")
+    def test_make_dir(self):
+        pass
+
+    @unittest.skip("")
+    def test_upload_file(self):
+        pass
+
+
+if __name__ == '__main__':
+    unittest.main()
