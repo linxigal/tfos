@@ -42,6 +42,7 @@ valid_losses = [
 # keras.metrics
 valid_metrics = valid_losses + [
     'accuracy',  # 手动添加，keras代码中暂未找到
+    'crossentropy',
     'binary_accuracy',
     'categorical_accuracy',
     'sparse_categorical_accuracy',

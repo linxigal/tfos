@@ -6,6 +6,7 @@
 :File   : read_data.py
 """
 import os
+import numpy as np
 import tensorflow as tf
 
 
@@ -19,7 +20,7 @@ def tfr2sample(byte_str):
 
 
 def from_csv(x):
-    return [int(s) for s in x.split(',') if len(x) > 0]
+    return [int(float(s)) for s in x.split(',') if len(x) > 0]
 
 
 class DataSet(object):
@@ -45,4 +46,4 @@ class DataSet(object):
                                                keyClass="org.apache.hadoop.io.BytesWritable",
                                                valueClass="org.apache.hadoop.io.NullWritable")
             rdd = tfr_rdd.map(lambda x: tfr2sample(bytes(x[0])))
-        return rdd.toDF(['features', 'label'])
+        return rdd

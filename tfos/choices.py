@@ -9,6 +9,8 @@ from tfos.base.config import *
 
 BOOLEAN = ['true', 'false']
 PADDING = ['valid', 'same']
+MNIST_FORMAT = ['tfr', 'csv', 'pickle', 'gz', 'npz']
+MNIST_MODE = ['train', 'test']
 ACTIVATIONS = [
     'relu',
     'softmax',
@@ -43,6 +45,7 @@ LOSSES = [
 
 METRICS = [
     'accuracy',  # 手动添加，keras代码中暂未找到
+    'crossentropy',
     'binary_accuracy',
     'categorical_accuracy',
     'sparse_categorical_accuracy',

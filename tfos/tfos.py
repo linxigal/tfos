@@ -6,13 +6,11 @@
 :File       : tfos.py
 """
 
-import os
 from tensorflowonspark import TFCluster
 
-# from tfos import cluster as TFCluster
 from tfos.base import ext_exception
+from tfos.base.gfile import ModelDir
 from .worker import TrainWorker, EvaluateWorker, PredictWorker
-from tfos.base.gfile import ModeDir
 
 
 class TFOS(object):
@@ -31,7 +29,8 @@ class TFOS(object):
         assert "compile_config" in columns, "not exists model compile config!"
         n_samples = data_rdd.count()
         steps_per_epoch = n_samples // batch_size
-        md = ModeDir(model_dir, 'train*').rebuild_model_dir()
+        md = ModelDir(model_dir, 'train*').rebuild_model_dir()
+        # md = ModelDir(model_dir, 'train*')
         worker = TrainWorker(model_rdd,
                              batch_size=batch_size,
                              epochs=epochs,
@@ -44,7 +43,7 @@ class TFOS(object):
 
     @ext_exception('evaluate model')
     def evaluate(self, data_rdd, steps, model_dir):
-        md = ModeDir(model_dir, 'evaluate*')
+        md = ModelDir(model_dir, 'evaluate*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
@@ -55,7 +54,7 @@ class TFOS(object):
 
     @ext_exception('predict model')
     def predict(self, data_rdd, steps, model_dir):
-        md = ModeDir(model_dir, 'predict*')
+        md = ModelDir(model_dir, 'predict*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
         worker = PredictWorker(steps_per_epoch=steps_per_epoch,
                                **md.to_dict())
