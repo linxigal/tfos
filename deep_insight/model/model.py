@@ -14,9 +14,10 @@
 
 import unittest
 
+from deep_insight import *
 from deep_insight.base import *
 from deep_insight.compile import Compile
-from deep_insight.data.read_mnist import ReadMnist
+from deep_insight.data.mnist import Mnist
 from deep_insight.layers.core import Dropout, Dense
 from deep_insight.layers.input import InputLayer
 
@@ -79,6 +80,7 @@ class TrainModel(Base):
         assert model_rdd, "cannot get model config rdd from previous model layer!"
         output_df = TFOS(sc, sqlc, cluster_size, num_ps).train(input_rdd, model_rdd, batch_size, epochs, model_dir)
         output_df.show()
+        outputRDD('<#zzjzRddName#>_mnist_test', model_rdd)
 
 
 class EvaluateModel(Base):
@@ -178,7 +180,21 @@ class PredictModel(Base):
 
 
 class TestModel(unittest.TestCase):
+
     def setUp(self) -> None:
+        self.is_local = True
+        self.mnist_dir = os.path.join(self.path, 'data/data/mnist')
+        self.model_dir = os.path.join(self.path, 'data/model/mnist_mlp')
+
+    def tearDown(self) -> None:
+        reset()
+
+    @property
+    def path(self):
+        return ROOT_PATH if self.is_local else HDFS
+
+    @staticmethod
+    def build_model():
         m = MODEL_BRANCH
         # build model
         InputLayer('784').b(m).run()
@@ -193,18 +209,11 @@ class TestModel(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-        # load train data
-        # input_path = os.path.join(ROOT_PATH, 'data/mnist/tfr/test')
-        input_path = "hdfs://t-master:8020/data/mnist/tfr/test"
-        # model_dir = os.path.join(ROOT_PATH, 'data/model_dir')
-        ReadMnist(input_path, 'tfr').b(DATA_BRANCH).run()
-        self.model_dir = "hdfs://t-master:8020/data/model/mnist_mlp"
-
-    def tearDown(self) -> None:
-        reset()
-
     @unittest.skip("")
     def test_train_model(self):
+        # load train data
+        Mnist(self.mnist_dir, mode='train').b(DATA_BRANCH).run()
+        self.build_model()
         # model train
         TrainModel(input_prev_layers=MODEL_BRANCH,
                    input_rdd_name=DATA_BRANCH,
@@ -214,8 +223,10 @@ class TestModel(unittest.TestCase):
                    epochs=2,
                    model_dir=self.model_dir).run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_evaluate_model(self):
+        # load train data
+        Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         # model train
         EvaluateModel(input_prev_layers=MODEL_BRANCH,
                       input_rdd_name=DATA_BRANCH,
@@ -226,6 +237,8 @@ class TestModel(unittest.TestCase):
 
     @unittest.skip("")
     def test_predict_model(self):
+        # load train data
+        Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         # model predict
         PredictModel(input_prev_layers=MODEL_BRANCH,
                      input_rdd_name=DATA_BRANCH,

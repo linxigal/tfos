@@ -27,7 +27,7 @@ class CustomEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class ModeDir(object):
+class ModelDir(object):
     """模型目录和文件的操作"""
 
     def __init__(self, model_dir, result_pattern):

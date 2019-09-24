@@ -14,10 +14,11 @@ from pyspark.sql import SQLContext
 CURRENT_PATH = os.path.dirname(__file__)
 ROOT_PATH = os.path.dirname(CURRENT_PATH)
 GITHUB = os.path.dirname(ROOT_PATH)
-OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
-
-if not os.path.exists(OUTPUT_DATA):
-    os.makedirs(OUTPUT_DATA)
+HDFS = 'hdfs://t-master:8020'
+# OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
+#
+# if not os.path.exists(OUTPUT_DATA):
+#     os.makedirs(OUTPUT_DATA)
 
 sc = SparkContext(conf=SparkConf().setAppName('tfos'))
 sqlc = SQLContext(sc)

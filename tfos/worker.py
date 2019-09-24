@@ -10,11 +10,12 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflowonspark import TFNode
 
-from tfos.base.gfile import ModeDir
+from tfos.base.gfile import ModelDir
 
 
 class Worker(object):
@@ -40,19 +41,9 @@ class Worker(object):
         self.cluster = None
         self.server = None
         self.model = None
+        self.labels = []
         self.tmp_dir = "/tmp"
-        # self.save_dir = self.create_dir('save_model')
-        # self.result_dir = self.create_dir('results')
-        # self.checkpoint_dir = self.create_dir('checkpoint')
         self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name + '_checkpoint_{epoch}')
-
-    # def create_dir(self, path):
-    #     path = os.path.join(self.model_dir, path)
-    #     if self.__class__.__name__ == "TrainWorker":
-    #         if tf.gfile.Exists(path):
-    #             tf.gfile.DeleteRecursively(path)
-    #         tf.gfile.MkDir(path)
-    #     return path
 
     @property
     def model_name(self, suffix='.h5'):
@@ -72,24 +63,27 @@ class Worker(object):
             inputs = []
             labels = []
             for row in batches:
-                inputs.append(row.features)
+                inputs.append(row.feature)
                 labels.append(row.label)
+                self.labels.append(np.argmax(row.label))
             inputs = np.array(inputs).astype('float32')
             labels = np.array(labels).astype('float32')
             yield inputs, labels
 
     def build_model(self):
-        raise NotImplementedError
+        pass
 
     def execute(self):
         raise NotImplementedError
 
     def save_model(self):
-        self.model.save(self.model_tmp_path)
-        tf.gfile.Copy(self.model_tmp_path, self.model_save_path, True)
+        if self.task_index == 0:
+            self.model.save(self.model_tmp_path)
+            tf.gfile.Copy(self.model_tmp_path, self.model_save_path, True)
 
     def load_model(self):
         tf.gfile.Copy(self.model_save_path, self.model_tmp_path, True)
+        K.set_learning_phase(False)
         self.model = load_model(self.model_tmp_path)
 
     def __call__(self, args, ctx):
@@ -133,17 +127,21 @@ class TrainWorker(Worker):
             else:
                 model = Model.from_config(self.model_config)
             model.compile(**self.compile_config)
-            model.summary()
             self.model = model
+
+    def restore_model(self):
+        ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            K.set_learning_phase(False)
+            self.model.load_weights(ckpt.model_checkpoint_path)
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
         with tf.Session(self.server.target) as sess:
-            sess.run(tf.global_variables_initializer())
-
+            K.set_session(sess)
+            # self.restore_model()
             tb_callback = TensorBoard(log_dir=self.log_dir, write_grads=True, write_images=True)
-            ckpt_callback = ModelCheckpoint(self.checkpoint_file, monitor='loss', save_weights_only=True,
-                                            save_best_only=True)
+            ckpt_callback = ModelCheckpoint(self.checkpoint_file, monitor='loss', save_weights_only=True)
 
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
             callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else None
@@ -152,12 +150,9 @@ class TrainWorker(Worker):
             his = self.model.fit_generator(generator=self.generate_rdd_data(),
                                            steps_per_epoch=self.steps_per_epoch,
                                            epochs=self.epochs,
-                                           callbacks=callbacks
-                                           )
-            if self.task_index == 0:
-                self.save_model()
-
-            ModeDir.write_result(result_file, self.get_results(his))
+                                           callbacks=callbacks)
+            self.save_model()
+            ModelDir.write_result(result_file, self.get_results(his))
             self.tf_feed.terminate()
 
 
@@ -172,16 +167,14 @@ class EvaluateWorker(Worker):
             result = zip(['_task_index', 'loss'], [self.task_index, float(his)])
         return [dict(result)]
 
-    def build_model(self):
-        self.load_model()
-
     def execute(self):
         result_file = os.path.join(self.result_dir, "evaluate_result_{}.txt".format(self.task_index))
         with tf.Session(self.server.target) as sess:
-            sess.run(tf.global_variables_initializer())
+            K.set_session(sess)
+            self.load_model()
             his = self.model.evaluate_generator(generator=self.generate_rdd_data(),
                                                 steps=self.steps_per_epoch)
-            ModeDir.write_result(result_file, self.get_results(his))
+            ModelDir.write_result(result_file, self.get_results(his))
             self.tf_feed.terminate()
 
 
@@ -190,21 +183,18 @@ class PredictWorker(Worker):
 
     def get_results(self, his):
         results = []
-        for pred in his:
-            results.append({
-                '_task_index': self.task_index,
-                'label': int(np.argmax(pred))
-            })
-        return results
-
-    def build_model(self):
-        self.load_model()
+        length = len(his)
+        results.append([('_task_index', self.task_index)] * length)
+        results.append(zip(['predict'] * length, [np.argmax(v) for v in his]))
+        results.append(zip(['p_true'] * length, self.labels))
+        return [dict(v) for v in zip(*results)]
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "predict_result_{}.txt".format(self.task_index))
         with tf.Session(self.server.target) as sess:
-            sess.run(tf.global_variables_initializer())
+            K.set_session(sess)
+            self.load_model()
             his = self.model.predict_generator(self.generate_rdd_data(),
                                                steps=self.steps_per_epoch)
-            ModeDir.write_result(result_file, self.get_results(his))
+            ModelDir.write_result(result_file, self.get_results(his))
             self.tf_feed.terminate()
