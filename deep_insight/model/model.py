@@ -209,7 +209,7 @@ class TestModel(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_train_model(self):
         # load train data
         Mnist(self.mnist_dir, mode='train').b(DATA_BRANCH).run()
