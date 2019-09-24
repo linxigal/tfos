@@ -3,8 +3,8 @@
 
 """
 :Author :weijinlong
-:Time:  :2019/9/19 11:28
-:File   :test_lenet.py
+:Time:  :2019/9/24 15:05
+:File   :test_alexnet.py
 :content:
   
 """
@@ -16,7 +16,7 @@ from deep_insight.base import *
 from deep_insight.compile import Compile
 from deep_insight.data.mnist import Mnist
 from deep_insight.layers.convolution import Convolution2D
-from deep_insight.layers.core import Dense, Flatten
+from deep_insight.layers.core import Dense, Dropout, Flatten
 from deep_insight.layers.input import InputLayer
 from deep_insight.layers.pooling import MaxPool2D
 from deep_insight.model.model import TrainModel, EvaluateModel, PredictModel
@@ -27,7 +27,7 @@ class TestLeNet(unittest.TestCase):
     def setUp(self) -> None:
         self.is_local = True
         self.mnist_dir = os.path.join(self.path, 'data/data/mnist')
-        self.model_dir = os.path.join(self.path, 'data/model/LeNet')
+        self.model_dir = os.path.join(self.path, 'data/model/AlexNet')
 
     def tearDown(self) -> None:
         reset()
@@ -41,20 +41,27 @@ class TestLeNet(unittest.TestCase):
         m = MODEL_BRANCH
         # build model
         InputLayer('28,28,1').b(m).run()
-        Convolution2D(filters='20', kernel_size='5,5', activation='relu', padding='valid').run()
-        MaxPool2D(pool_size='2,2', strides='2,2').run()
-        Convolution2D(filters='50', kernel_size='5,5', activation='relu', padding='valid').run()
-        MaxPool2D(pool_size='2,2', strides='2,2').run()
+        Convolution2D(filters='96', kernel_size='11,11', activation='relu', padding='same').run()
+        MaxPool2D(pool_size='3,3', strides='2,2').run()
+        Convolution2D(filters='256', kernel_size='5,5', activation='relu', padding='same').run()
+        MaxPool2D(pool_size='3,3', strides='2,2').run()
+        Convolution2D(filters='384', kernel_size='5,5', activation='relu', padding='same').run()
+        Convolution2D(filters='384', kernel_size='5,5', activation='relu', padding='same').run()
+        Convolution2D(filters='256', kernel_size='5,5', activation='relu', padding='same').run()
+        MaxPool2D(pool_size='3,3', strides='2,2').run()
         Flatten().run()
-        Dense('120', activation='relu').run()
+        Dense('4096', activation='relu').run()
+        Dropout('0.5').run()
+        Dense('4096', activation='relu').run()
+        Dropout('0.5').run()
         Dense('10', activation='softmax').run()
         # compile model
         Compile('categorical_crossentropy', 'sgd', ['accuracy']).run()
         # show network struct
         SummaryLayer(m).run()
 
-    @unittest.skip("")
-    def test_lenet_train(self):
+    # @unittest.skip("")
+    def test_alexnet_train(self):
         # load train data
         Mnist(self.mnist_dir, mode='train', is_conv='true').b(DATA_BRANCH).run()
         self.build_model()
@@ -69,7 +76,7 @@ class TestLeNet(unittest.TestCase):
                    model_dir=self.model_dir).run()
 
     @unittest.skip("")
-    def test_lenet_evaluate(self):
+    def test_alexnet_evaluate(self):
         # load train data
         Mnist(self.mnist_dir, mode='test', is_conv='true').b(DATA_BRANCH).run()
         # model train
@@ -81,7 +88,7 @@ class TestLeNet(unittest.TestCase):
                       model_dir=self.model_dir).run()
 
     @unittest.skip("")
-    def test_lenet_predict(self):
+    def test_alexnet_predict(self):
         # load train data
         Mnist(self.mnist_dir, mode='test', is_conv='true').b(DATA_BRANCH).run()
         # model predict
