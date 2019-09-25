@@ -7,4 +7,4 @@
 
 
 def convert_bool(param):
-    return True if param.lower() == 'true' else False
+    return True if param is True or param.lower() == 'true' else False

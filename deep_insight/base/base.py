@@ -29,6 +29,7 @@ def outputRDD(name, rdd):
 
 def reset():
     GLOBAL_RDD.clear()
+    GP.clear()
 
 
 class Base(object):
