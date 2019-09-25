@@ -11,6 +11,7 @@
 
 from tensorflow.python.keras.layers import InputLayer, Dense, Add, Input
 from tensorflow.python.keras.models import Model, Sequential
+from tensorflow.python.keras.optimizers import SGD, serialize, deserialize
 
 
 def network():
@@ -27,5 +28,11 @@ def network():
     print(model.inputs)
 
 
+def optimizer():
+    print(serialize(SGD()))
+    print(deserialize(serialize(SGD())))
+
+
 if __name__ == '__main__':
-    network()
+    # network()
+    optimizer()

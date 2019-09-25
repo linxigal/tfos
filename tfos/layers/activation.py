@@ -3,7 +3,7 @@
 """
 :Author : weijinlong
 :Time:  : 2019/8/8 14:09
-:File   : activations.py
+:File   : activation.py
 """
 from tensorflow.python.keras.layers import LeakyReLU, PReLU, ELU, ThresholdedReLU, Softmax, ReLU
 

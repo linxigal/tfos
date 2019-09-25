@@ -754,14 +754,14 @@ class TestCoreSequence(unittest.TestCase):
     def setUp(self) -> None:
         reset()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_masking(self):
         Masking(input_shape='2,10').run()
         Masking().run()
         Masking().run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_dropout(self):
         Dense('512', input_shape='784').run()
         Dropout('0.01').run()
@@ -769,7 +769,7 @@ class TestCoreSequence(unittest.TestCase):
         Dropout('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_1d(self):
         Dense('512', input_shape='32,784').run()
         SpatialDropout1D('0.01').run()
@@ -777,7 +777,7 @@ class TestCoreSequence(unittest.TestCase):
         SpatialDropout1D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_2d(self):
         Dense('512', input_shape='32,64,784').run()
         SpatialDropout2D('0.01').run()
@@ -785,7 +785,7 @@ class TestCoreSequence(unittest.TestCase):
         SpatialDropout2D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_3d(self):
         Dense('512', input_shape='32,64,128,784').run()
         SpatialDropout3D('0.01').run()
@@ -793,7 +793,7 @@ class TestCoreSequence(unittest.TestCase):
         SpatialDropout3D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_activation(self):
         Dense('512', input_shape='784').run()
         Activation(activation='relu').run()
@@ -801,28 +801,28 @@ class TestCoreSequence(unittest.TestCase):
         Activation(activation='relu').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_reshape(self):
         Reshape('4,6', input_shape='24').run()
         Reshape('3,8').run()
         Reshape('-1,3,4').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_permute(self):
         Permute('2,1,3', '10,64,128').run()
         Permute('1,3,2').run()
         Permute('2,1,3').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_flatten(self):
         Dense('32', input_shape='10,64,128').run()
         Flatten().run()
         Flatten().run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_repeat_vector(self):
         Dense('32', input_shape='64').run()
         RepeatVector('3').run()
@@ -843,7 +843,7 @@ class TestCoreSequence(unittest.TestCase):
         Lambda(antirectifier).run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_dense(self):
         Dense('512', input_shape='784').run()
         Dense('512').run()
@@ -851,7 +851,7 @@ class TestCoreSequence(unittest.TestCase):
         Dense('10').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_activity_regularization(self):
         # l1,l2不能同时为0
         ActivityRegularization('0.1', '0.5', input_shape='10,64').run()
@@ -864,7 +864,7 @@ class TestCoreNetWork(unittest.TestCase):
     def tearDown(self) -> None:
         reset()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_masking(self):
         InputLayer('2,10').run()
         Masking().run()
@@ -872,7 +872,7 @@ class TestCoreNetWork(unittest.TestCase):
         Masking().run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_dropout(self):
         InputLayer('784').run()
         Dense('512').run()
@@ -881,7 +881,7 @@ class TestCoreNetWork(unittest.TestCase):
         Dropout('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_1d(self):
         InputLayer('32,784').run()
         Dense('512').run()
@@ -890,7 +890,7 @@ class TestCoreNetWork(unittest.TestCase):
         SpatialDropout1D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_2d(self):
         InputLayer('32,64,784').run()
         Dense('512').run()
@@ -899,7 +899,7 @@ class TestCoreNetWork(unittest.TestCase):
         SpatialDropout2D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_spatial_dropout_3d(self):
         InputLayer('32,64,128,784').run()
         Dense('512').run()
@@ -908,7 +908,7 @@ class TestCoreNetWork(unittest.TestCase):
         SpatialDropout3D('0.01').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_activation(self):
         InputLayer('784').run()
         Dense('512').run()
@@ -917,7 +917,7 @@ class TestCoreNetWork(unittest.TestCase):
         Activation(activation='relu').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_reshape(self):
         InputLayer('24').run()
         Reshape('4,6').run()
@@ -925,7 +925,7 @@ class TestCoreNetWork(unittest.TestCase):
         Reshape('-1,3,4').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_permute(self):
         InputLayer('10,64,128').run()
         Permute('2,1,3').run()
@@ -933,7 +933,7 @@ class TestCoreNetWork(unittest.TestCase):
         Permute('2,1,3').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_flatten(self):
         InputLayer('10,64,128').run()
         Dense('32').run()
@@ -941,7 +941,7 @@ class TestCoreNetWork(unittest.TestCase):
         Flatten().run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_repeat_vector(self):
         InputLayer('64').run()
         Dense('32').run()
@@ -964,7 +964,7 @@ class TestCoreNetWork(unittest.TestCase):
         Lambda(antirectifier).run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_dense(self):
         InputLayer('784').run()
         Dense('512').run()
@@ -972,7 +972,7 @@ class TestCoreNetWork(unittest.TestCase):
         Dense('10').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_activity_regularization(self):
         # l1,l2不能同时为0
         InputLayer('10,64').run()

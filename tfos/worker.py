@@ -13,8 +13,10 @@ import tensorflow as tf
 from keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.optimizers import deserialize
 from tensorflowonspark import TFNode
 
+from tfos.base import ModelType
 from tfos.base.gfile import ModelDir
 
 
@@ -103,9 +105,14 @@ class TrainWorker(Worker):
 
     def __init__(self, model_rdd, *args, **kwargs):
         super(TrainWorker, self).__init__(*args, **kwargs)
-        self.is_sequence = model_rdd.first().is_sequence
+        self.model_type = model_rdd.first().model_type
         self.model_config = json.loads(model_rdd.first().model_config)
         self.compile_config = json.loads(model_rdd.first().compile_config)
+
+    def parse_optimizer(self):
+        optimizer = self.compile_config.get('optimizer')
+        if optimizer and isinstance(optimizer, dict):
+            self.compile_config['optimizer'] = deserialize(optimizer)
 
     def get_results(self, his):
         results = []
@@ -122,10 +129,13 @@ class TrainWorker(Worker):
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            if self.is_sequence:
+            if self.model_type == ModelType.SEQUENCE:
                 model = Sequential.from_config(self.model_config)
-            else:
+            elif self.model_type == ModelType.NETWORK:
                 model = Model.from_config(self.model_config)
+            else:
+                raise ValueError("unknown model type!!!")
+            self.parse_optimizer()
             model.compile(**self.compile_config)
             self.model = model
 

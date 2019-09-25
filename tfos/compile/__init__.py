@@ -7,3 +7,4 @@
 """
 
 from .compile import CompileLayer
+from .optimizers import OPTIMIZERS

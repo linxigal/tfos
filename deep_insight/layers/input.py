@@ -60,7 +60,6 @@ class InputLayer(Base):
         from tfos.choices import BOOLEAN
 
         # param = json.loads('<#zzjzParam#>')
-        input_prev_layers = param.get("input_prev_layers", '')
         input_shape = param.get("input_shape")
         batch_size = param.get("batch_size", "")
         dtype = param.get("dtype", "")
@@ -79,8 +78,7 @@ class InputLayer(Base):
         if name:
             kwargs['name'] = name
 
-        model_rdd = inputRDD(input_prev_layers)
-        output_df = InputLayer(model_rdd, sqlc=sqlc).add(**kwargs)
+        output_df = InputLayer(sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Input', output_df)
 
 
