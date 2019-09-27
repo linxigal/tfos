@@ -6,11 +6,12 @@
 :File   : __init__.py.py
 """
 
-from .activations import *
+from .activation import *
 from .convolution import *
 from .core import *
 from .input import *
 from .merge import *
+from .optimizer import *
 from .pooling import *
 from .recurrent import *
 
@@ -31,4 +32,6 @@ __all__ = [
     "MaxPool1DLayer", "MaxPool2DLayer", "MaxPool3DLayer", "AvgPool1DLayer", "AvgPool2DLayer", "AvgPool3DLayer",
     # rnn layer
     "SimpleRNN", "GRU", "LSTM",
+    # optimizer layer
+    'SGDLayer', 'RMSpropLayer', 'AdagradLayer', 'AdadeltaLayer', 'AdamLayer', 'AdamaxLayer', 'NadamLayer',
 ]

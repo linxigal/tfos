@@ -5,4 +5,4 @@
 :Time:  :2019/6/17 15:45
 :File   : __init__.py.py
 """
-from .compile import Compile
+from .compile import Compile, CompileAdvanced

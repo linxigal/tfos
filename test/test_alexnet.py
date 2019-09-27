@@ -25,7 +25,7 @@ from deep_insight.model.model import TrainModel, EvaluateModel, PredictModel
 class TestLeNet(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.is_local = True
+        self.is_local = False
         self.mnist_dir = os.path.join(self.path, 'data/data/mnist')
         self.model_dir = os.path.join(self.path, 'data/model/AlexNet')
 
@@ -60,7 +60,7 @@ class TestLeNet(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_alexnet_train(self):
         # load train data
         Mnist(self.mnist_dir, mode='train', is_conv='true').b(DATA_BRANCH).run()
