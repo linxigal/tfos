@@ -43,11 +43,11 @@ class Mnist(Base):
 
         from tfos.data.mnist import Mnist
         from tfos.utils import convert_bool
-        from tfos.choices import BOOLEAN, MNIST_FORMAT, MNIST_MODE
+        from tfos.choices import BOOLEAN, MNIST_FORMAT, DATA_MODE
 
         # param = json.loads('<#zzjzParam#>')
         mnist_dir = param.get('mnist_dir')[0]['path']
-        mode = param.get('mode', MNIST_MODE[0])
+        mode = param.get('mode', DATA_MODE[0])
         data_format = param.get('data_format', MNIST_FORMAT[0])
         one_hot = param.get('one_hot', BOOLEAN[0])
         is_conv = param.get('is_conv', BOOLEAN[1])
