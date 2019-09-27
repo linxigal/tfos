@@ -7,4 +7,21 @@
 """
 from .read_data import DataSet
 
-__all__ = ['DataSet']
+__all__ = ['DataSet', 'BaseData']
+
+DATAINDEX = ['feature', 'label']
+
+
+class BaseData(object):
+
+    @property
+    def train_df(self):
+        raise NotImplementedError
+
+    @property
+    def test_df(self):
+        raise NotImplementedError
+
+    @staticmethod
+    def rdd2df(rdd):
+        return rdd.toDF(DATAINDEX)

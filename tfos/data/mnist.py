@@ -12,8 +12,10 @@ import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets.mnist import extract_images, extract_labels
 from tensorflow.python.keras.datasets.mnist import load_data
 
+from tfos.data import BaseData
 
-class Mnist(object):
+
+class Mnist(BaseData):
 
     def __init__(self, sc, mnist_dir, data_format='tfr', one_hot=False, is_conv=False):
         self.sc = sc
@@ -27,13 +29,13 @@ class Mnist(object):
     def train_df(self):
         self.__mode = 'train'
         rdd = self.load_rdd()
-        return rdd.toDF(['feature', 'label'])
+        return self.rdd2df(rdd)
 
     @property
     def test_df(self):
         self.__mode = 'test'
         rdd = self.load_rdd()
-        return rdd.toDF(['feature', 'label'])
+        return self.rdd2df(rdd)
 
     def load_rdd(self):
         if self.data_format == 'tfr':

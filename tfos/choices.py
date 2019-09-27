@@ -10,7 +10,7 @@ from tfos.base.config import *
 BOOLEAN = ['true', 'false']
 PADDING = ['valid', 'same']
 MNIST_FORMAT = ['tfr', 'csv', 'pickle', 'gz', 'npz']
-MNIST_MODE = ['train', 'test']
+DATA_MODE = ['train', 'test']
 ACTIVATIONS = [
     'relu',
     'softmax',
