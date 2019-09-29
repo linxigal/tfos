@@ -16,14 +16,15 @@ from tfos.data import BaseData
 
 
 class Mnist(BaseData):
-
-    def __init__(self, sc, mnist_dir, data_format='tfr', one_hot=False, is_conv=False):
-        self.sc = sc
-        self.mnist_dir = mnist_dir
+    def __init__(self, data_format='tfr', **kwargs):
         self.data_format = data_format
-        self.one_hot = one_hot
-        self.is_conv = is_conv
+        super(Mnist, self).__init__(**kwargs)
+
         self.__mode = None
+        self.height = 28
+        self.width = 28
+        self.channel = 1
+        self.num_class = 10
 
     @property
     def train_df(self):
@@ -51,10 +52,10 @@ class Mnist(BaseData):
         else:
             raise ValueError('unknown data format!')
 
-        if self.is_conv:
-            rdd = rdd.map(self.convert_conv)
-        else:
+        if self.flat:
             rdd = rdd.map(self.convert_flatten)
+        else:
+            rdd = rdd.map(self.convert_conv)
 
         if self.one_hot:
             rdd = rdd.map(self.convert_one)
@@ -65,7 +66,7 @@ class Mnist(BaseData):
 
     @property
     def data_dir(self):
-        return os.path.join(self.mnist_dir, self.data_format)
+        return os.path.join(self.path, self.data_format)
 
     def load_tfr(self):
         data_dir = os.path.join(self.data_dir, self.__mode)
@@ -107,7 +108,6 @@ class Mnist(BaseData):
 
     def load_npz(self):
         path = os.path.join(self.data_dir, 'mnist.npz')
-        # (x_train, y_train), (x_test, y_test) = load_data(path)
         train_data, test_data = load_data(path)
 
         if self.__mode == 'train':

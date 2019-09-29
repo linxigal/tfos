@@ -23,15 +23,19 @@ class TFOS(object):
         self.cluster = None
 
     @ext_exception("train model")
-    def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir):
+    def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir, go_on=False):
         columns = model_rdd.columns
         assert "model_config" in columns, "not exists model layer config!"
         assert "compile_config" in columns, "not exists model compile config!"
         n_samples = data_rdd.count()
         steps_per_epoch = n_samples // batch_size
-        md = ModelDir(model_dir, 'train*').rebuild_model_dir()
-        # md = ModelDir(model_dir, 'train*')
+        md = ModelDir(model_dir, 'train*')
+        if go_on:
+            md.create_model_dir()
+        else:
+            md = md.rebuild_model_dir()
         worker = TrainWorker(model_rdd,
+                             go_on=go_on,
                              batch_size=batch_size,
                              epochs=epochs,
                              steps_per_epoch=steps_per_epoch,

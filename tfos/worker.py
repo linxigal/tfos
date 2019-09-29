@@ -103,11 +103,13 @@ class Worker(object):
 class TrainWorker(Worker):
     """训练"""
 
-    def __init__(self, model_rdd, *args, **kwargs):
+    def __init__(self, model_rdd, go_on, *args, **kwargs):
         super(TrainWorker, self).__init__(*args, **kwargs)
         self.model_type = model_rdd.first().model_type
         self.model_config = json.loads(model_rdd.first().model_config)
         self.compile_config = json.loads(model_rdd.first().compile_config)
+        self.go_on = go_on
+        self.initial_epoch = 0
 
     def parse_optimizer(self):
         optimizer = self.compile_config.get('optimizer')
@@ -143,13 +145,15 @@ class TrainWorker(Worker):
         ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             K.set_learning_phase(False)
+            self.initial_epoch = int(ckpt.model_checkpoint_path.split('_')[-1])
             self.model.load_weights(ckpt.model_checkpoint_path)
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
         with tf.Session(self.server.target) as sess:
             K.set_session(sess)
-            # self.restore_model()
+            if self.go_on:
+                self.restore_model()
             tb_callback = TensorBoard(log_dir=self.log_dir, write_grads=True, write_images=True)
             ckpt_callback = ModelCheckpoint(self.checkpoint_file, monitor='loss', save_weights_only=True)
 
@@ -159,10 +163,11 @@ class TrainWorker(Worker):
             # train on data read from a generator which is producing data from a Spark RDD
             his = self.model.fit_generator(generator=self.generate_rdd_data(),
                                            steps_per_epoch=self.steps_per_epoch,
-                                           epochs=self.epochs,
-                                           callbacks=callbacks)
+                                           epochs=self.epochs + self.initial_epoch,
+                                           callbacks=callbacks,
+                                           initial_epoch=self.initial_epoch)
             self.save_model()
-            ModelDir.write_result(result_file, self.get_results(his))
+            ModelDir.write_result(result_file, self.get_results(his), self.go_on)
             self.tf_feed.terminate()
 
 

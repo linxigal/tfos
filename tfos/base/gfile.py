@@ -41,7 +41,8 @@ class ModelDir(object):
 
     def create_model_dir(self):
         for path in self.dirs:
-            tf.gfile.MkDir(path)
+            if not tf.gfile.Exists(path):
+                tf.gfile.MkDir(path)
 
     def delete_model_dir(self):
         for path in self.dirs:
@@ -69,10 +70,15 @@ class ModelDir(object):
         return results
 
     @staticmethod
-    def write_result(path, results, mode='w'):
-        with tf.gfile.FastGFile(path, mode) as f:
-            for result in results:
-                f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
+    def write_result(path, results, go_on=False):
+        if go_on and tf.gfile.Exists(path):
+            with tf.gfile.FastGFile(path, 'a') as f:
+                for result in results:
+                    f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
+        else:
+            with tf.gfile.FastGFile(path, 'w') as f:
+                for result in results:
+                    f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
 
     def to_dict(self):
         return {
@@ -89,7 +95,7 @@ class TestModelDir(unittest.TestCase):
         self.model_dir = "hdfs://t-master:8020/data/model/mnist_mlp"
 
     def test_read_result_file(self):
-        md = ModeDir(self.model_dir, 'train*')
+        md = ModelDir(self.model_dir, 'train*')
         md.read_result_file()
 
 
