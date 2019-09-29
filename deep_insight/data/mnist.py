@@ -55,7 +55,7 @@ class Mnist(Base):
         one_hot = convert_bool(one_hot)
         is_conv = convert_bool(is_conv)
 
-        mnist = Mnist(sc, mnist_dir, data_format, one_hot, is_conv)
+        mnist = Mnist(sc=sc, path=mnist_dir, data_format=data_format, one_hot=one_hot, flat=not is_conv)
         output_df = mnist.train_df if mode == 'train' else mnist.test_df
         outputRDD('<#zzjzRddName#>_mnist_{}'.format(mode), output_df)
 

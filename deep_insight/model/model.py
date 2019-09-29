@@ -39,9 +39,11 @@ class TrainModel(Base):
             对传入的数据集，训练模型时需要迭代的次数
         model_dir: 模型保存路径
             保存路径下会自动生成tensorboard目录，checkpoint目录以及save_model目录
+        go_on: 继续训练：
+            boolean， 是否接着上次训练结果继续训练模型
     """
 
-    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, **kwargs):
+    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, go_on='false', **kwargs):
         super(TrainModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
@@ -49,11 +51,14 @@ class TrainModel(Base):
         self.p('epochs', epochs)
         # self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', [{"path": model_dir}])
+        self.p('go_on', go_on)
 
     def run(self):
         param = self.params
 
         from tfos import TFOS
+        from tfos.choices import BOOLEAN
+        from tfos.utils import convert_bool
 
         # param = json.loads('<#zzjzParam#>')
         input_rdd_name = param.get('input_rdd_name')
@@ -63,12 +68,14 @@ class TrainModel(Base):
         batch_size = param.get('batch_size', 32)
         epochs = param.get('epochs', 1)
         model_dir = param.get('model_dir')[0]['path']
+        go_on = param.get('go_on', BOOLEAN[1])
 
         # param check
         cluster_size = int(cluster_size)
         num_ps = int(num_ps)
         batch_size = int(batch_size)
         epochs = int(epochs)
+        go_on = convert_bool(go_on)
 
         # load data
         assert input_rdd_name is not None, "parameter input_rdd_name cannot empty!"
@@ -78,7 +85,12 @@ class TrainModel(Base):
         assert input_prev_layers is not None, "parameter input_model_config cannot empty!"
         model_rdd = inputRDD(input_prev_layers)
         assert model_rdd, "cannot get model config rdd from previous model layer!"
-        output_df = TFOS(sc, sqlc, cluster_size, num_ps).train(input_rdd, model_rdd, batch_size, epochs, model_dir)
+        output_df = TFOS(sc, sqlc, cluster_size, num_ps).train(data_rdd=input_rdd,
+                                                               model_rdd=model_rdd,
+                                                               batch_size=batch_size,
+                                                               epochs=epochs,
+                                                               model_dir=model_dir,
+                                                               go_on=go_on)
         output_df.show()
         outputRDD('<#zzjzRddName#>_mnist_test', model_rdd)
 
@@ -209,10 +221,10 @@ class TestModel(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_train_model(self):
         # load train data
-        Mnist(self.mnist_dir, mode='train').b(DATA_BRANCH).run()
+        Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         self.build_model()
         # model train
         TrainModel(input_prev_layers=MODEL_BRANCH,
@@ -221,7 +233,8 @@ class TestModel(unittest.TestCase):
                    num_ps=1,
                    batch_size=32,
                    epochs=2,
-                   model_dir=self.model_dir).run()
+                   model_dir=self.model_dir,
+                   go_on='true').run()
 
     @unittest.skip("")
     def test_evaluate_model(self):

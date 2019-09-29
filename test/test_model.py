@@ -33,6 +33,25 @@ def optimizer():
     print(deserialize(serialize(SGD())))
 
 
+def classes():
+    class A(object):
+        def __init__(self, a):
+            self.a = a
+            print(a)
+
+    class B(object):
+        def __init__(self, b):
+            self.b = b
+            print(b)
+
+    class C(A, B):
+        def __init__(self, **kwargs):
+            super(C, self).__init__(**kwargs)
+
+    C(a=5, b=6)
+
+
 if __name__ == '__main__':
     # network()
-    optimizer()
+    # optimizer()
+    classes()
