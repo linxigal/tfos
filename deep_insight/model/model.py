@@ -92,7 +92,7 @@ class TrainModel(Base):
                                                                model_dir=model_dir,
                                                                go_on=go_on)
         output_df.show()
-        outputRDD('<#zzjzRddName#>_mnist_test', model_rdd)
+        outputRDD('<#zzjzRddName#>_train_result', output_df)
 
 
 class EvaluateModel(Base):
@@ -141,6 +141,7 @@ class EvaluateModel(Base):
 
         output_df = TFOS(sc, sqlc, cluster_size, num_ps).evaluate(input_rdd, steps, model_dir)
         output_df.show()
+        outputRDD('<#zzjzRddName#>_evaluate_result', output_df)
 
 
 class PredictModel(Base):
@@ -156,19 +157,24 @@ class PredictModel(Base):
         steps: 执行步数
         model_dir: 模型保存路径
             保存路径下会自动生成tensorboard目录，checkpoint目录以及save_model目录
+        output_prob：输出预测值
+            boolean，是否输出每个样本在所有分类类别上的详细概率值
     """
 
-    def __init__(self, cluster_size, num_ps, steps, model_dir, **kwargs):
+    def __init__(self, cluster_size, num_ps, steps, model_dir, output_prob, **kwargs):
         super(PredictModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('steps', steps)
         self.p('model_dir', [{"path": model_dir}])
+        self.p('output_prob', output_prob)
 
     def run(self):
         param = self.params
 
         from tfos import TFOS
+        from tfos.choices import BOOLEAN
+        from tfos.utils import convert_bool
 
         # param = json.loads('<#zzjzParam#>')
         input_rdd_name = param.get('input_rdd_name')
@@ -176,19 +182,22 @@ class PredictModel(Base):
         num_ps = param.get('num_ps', 1)
         steps = param.get('steps', 0)
         model_dir = param.get('model_dir')[0]['path']
+        output_prob = param.get('output_prob', BOOLEAN[0])
 
         # param check
         cluster_size = int(cluster_size)
         num_ps = int(num_ps)
         steps = int(steps)
+        output_prob = convert_bool(output_prob)
 
         # load data
         assert input_rdd_name is not None, "parameter input_rdd_name cannot empty!"
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
 
-        output_df = TFOS(sc, sqlc, cluster_size, num_ps).predict(input_rdd, steps, model_dir)
+        output_df = TFOS(sc, sqlc, cluster_size, num_ps).predict(input_rdd, steps, model_dir, output_prob)
         output_df.show()
+        outputRDD('<#zzjzRddName#>_predict_result', output_df)
 
 
 class TestModel(unittest.TestCase):
@@ -223,10 +232,8 @@ class TestModel(unittest.TestCase):
 
     @unittest.skip("")
     def test_train_model(self):
-        # load train data
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         self.build_model()
-        # model train
         TrainModel(input_prev_layers=MODEL_BRANCH,
                    input_rdd_name=DATA_BRANCH,
                    cluster_size=2,
@@ -238,9 +245,7 @@ class TestModel(unittest.TestCase):
 
     @unittest.skip("")
     def test_evaluate_model(self):
-        # load train data
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
-        # model train
         EvaluateModel(input_prev_layers=MODEL_BRANCH,
                       input_rdd_name=DATA_BRANCH,
                       cluster_size=2,
@@ -250,15 +255,14 @@ class TestModel(unittest.TestCase):
 
     @unittest.skip("")
     def test_predict_model(self):
-        # load train data
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
-        # model predict
         PredictModel(input_prev_layers=MODEL_BRANCH,
                      input_rdd_name=DATA_BRANCH,
                      cluster_size=2,
                      num_ps=1,
                      steps=10,
-                     model_dir=self.model_dir).run()
+                     model_dir=self.model_dir,
+                     output_prob='true').run()
 
 
 if __name__ == '__main__':

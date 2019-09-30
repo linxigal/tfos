@@ -18,13 +18,17 @@ from tensorflow.python.keras.optimizers import Optimizer, serialize
 
 from .config import *
 from .exception import ext_exception
+from .logger import logger
 
 __all__ = [
     'get_model_config', 'BaseLayer',
-    'ext_exception',
+    'ext_exception', 'logger',
     'valid_activations', 'valid_losses', 'valid_metrics', 'valid_optimizers', 'valid_regularizers',
-    'ModelType'
+    'ModelType', 'ROUND_NUM'
 ]
+
+# 保留小数点位数
+ROUND_NUM = 6
 
 
 class ModelType:

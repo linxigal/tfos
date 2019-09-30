@@ -9,6 +9,7 @@ from tfos.base.config import *
 
 BOOLEAN = ['true', 'false']
 PADDING = ['valid', 'same']
+OUTPUT_FORMAT = ['json', 'csv']
 MNIST_FORMAT = ['tfr', 'csv', 'pickle', 'gz', 'npz']
 DATA_MODE = ['train', 'test']
 ACTIVATIONS = [

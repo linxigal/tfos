@@ -16,7 +16,7 @@ from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
 from tensorflowonspark import TFNode
 
-from tfos.base import ModelType
+from tfos.base import ModelType, ROUND_NUM
 from tfos.base.gfile import ModelDir
 
 
@@ -122,7 +122,7 @@ class TrainWorker(Worker):
         for key, values in his.history.items():
             length = len(values)
             results.append(zip([key] * len(values), values))
-        results.append(zip(['_tast_index'] * length, [self.task_index] * length))
+        results.append(zip(['_task_index'] * length, [self.task_index] * length))
         results.append(zip(['_epoch'] * length, his.epoch))
         return [dict(v) for v in zip(*results)]
 
@@ -176,10 +176,9 @@ class EvaluateWorker(Worker):
 
     def get_results(self, his):
         if isinstance(his, list):
-            his = [float(v) for v in his]
             result = zip(["_task_index"] + self.model.metrics_names, [self.task_index] + his)
         else:
-            result = zip(['_task_index', 'loss'], [self.task_index, float(his)])
+            result = zip(['_task_index', 'loss'], [self.task_index, his])
         return [dict(result)]
 
     def execute(self):
@@ -196,12 +195,18 @@ class EvaluateWorker(Worker):
 class PredictWorker(Worker):
     """预测"""
 
+    def __init__(self, output_prob=False, *args, **kwargs):
+        super(PredictWorker, self).__init__(*args, **kwargs)
+        self.output_prob = output_prob
+
     def get_results(self, his):
         results = []
         length = len(his)
         results.append([('_task_index', self.task_index)] * length)
-        results.append(zip(['predict'] * length, [np.argmax(v) for v in his]))
-        results.append(zip(['p_true'] * length, self.labels))
+        results.append(zip(['p_label'] * length, [np.argmax(v) for v in his]))
+        results.append(zip(['true'] * length, self.labels))
+        if self.output_prob:
+            results.extend(zip(*[[('z_{}'.format(i), v) for i, v in enumerate(value)] for value in his]))
         return [dict(v) for v in zip(*results)]
 
     def execute(self):
