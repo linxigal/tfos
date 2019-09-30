@@ -15,13 +15,17 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
+from tfos.base import ROUND_NUM
+
+OUTPUT_FORMAT = ['json', 'csv']
+
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (np.int32, np.int64)):
             return int(obj)
         if isinstance(obj, (np.float16, np.float32)):
-            return float(obj)
+            return round(float(obj), ROUND_NUM)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
@@ -60,7 +64,7 @@ class ModelDir(object):
             if tf.gfile.Exists(file):
                 tf.gfile.Remove(file)
 
-    def read_result_file(self):
+    def read_result(self):
         results = []
         pattern_path = os.path.join(self.result_dir, self.result_pattern)
         for path in tf.gfile.Glob(pattern_path):
@@ -71,14 +75,18 @@ class ModelDir(object):
 
     @staticmethod
     def write_result(path, results, go_on=False):
+
         if go_on and tf.gfile.Exists(path):
             with tf.gfile.FastGFile(path, 'a') as f:
-                for result in results:
-                    f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
+                ModelDir.write_text(f, results)
         else:
             with tf.gfile.FastGFile(path, 'w') as f:
-                for result in results:
-                    f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
+                ModelDir.write_text(f, results)
+
+    @staticmethod
+    def write_text(f, results):
+        for result in results:
+            f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
 
     def to_dict(self):
         return {
@@ -96,7 +104,7 @@ class TestModelDir(unittest.TestCase):
 
     def test_read_result_file(self):
         md = ModelDir(self.model_dir, 'train*')
-        md.read_result_file()
+        md.read_result()
 
 
 if __name__ == '__main__':

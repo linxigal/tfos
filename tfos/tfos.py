@@ -43,7 +43,7 @@ class TFOS(object):
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result_file())
+        return self.sqlc.createDataFrame(md.read_result())
 
     @ext_exception('evaluate model')
     def evaluate(self, data_rdd, steps, model_dir):
@@ -54,16 +54,17 @@ class TFOS(object):
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result_file())
+        return self.sqlc.createDataFrame(md.read_result())
 
     @ext_exception('predict model')
-    def predict(self, data_rdd, steps, model_dir):
+    def predict(self, data_rdd, steps, model_dir, output_prob=False):
         md = ModelDir(model_dir, 'predict*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
         worker = PredictWorker(steps_per_epoch=steps_per_epoch,
+                               output_prob=output_prob,
                                **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result_file())
+        return self.sqlc.createDataFrame(md.read_result())
