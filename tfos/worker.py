@@ -10,7 +10,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
