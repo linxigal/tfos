@@ -68,11 +68,23 @@ class BaseLayer(object):
         self.__layer_name = ""
         self.__model_type = ModelType.SEQUENCE
 
+    @property
+    def model_rdd(self):
+        return self.__model_rdd
+
+    @property
+    def sc(self):
+        return self.__sc
+
+    @property
+    def sqlc(self):
+        return self.__sqlc
+
     def _add_or_create_column(self, name, value):
-        if self.__model_rdd:
-            return self.__model_rdd.withColumn(name, value)
+        if self.model_rdd:
+            return self.model_rdd.withColumn(name, value)
         else:
-            return self.__sqlc.createDataFrame([Row(**{name: value})])
+            return self.sqlc.createDataFrame([Row(**{name: value})])
 
     def model2df(self, model, name='model_config'):
         data = {
@@ -81,20 +93,20 @@ class BaseLayer(object):
             'model_type': self.__model_type,
             name: json.dumps(model.get_config(), cls=CustomEncoder)
         }
-        return self.__sqlc.createDataFrame([Row(**data)])
+        return self.sqlc.createDataFrame([Row(**data)])
 
     def dict2df(self, data, name="model_config"):
         if not isinstance(data, dict):
             raise ValueError("function dict2df: parameter instance must be dict!")
         data = {name: json.dumps(data)}
-        return self.__sqlc.createDataFrame([Row(**data)])
+        return self.sqlc.createDataFrame([Row(**data)])
 
     def __add_sequence_layer(self, layer):
         """序列模型，上一层输入只有一个模型"""
 
         model_config = {}
-        if self.__model_rdd:
-            model_config = json.loads(self.__model_rdd.first().model_config)
+        if self.model_rdd:
+            model_config = json.loads(self.model_rdd.first().model_config)
             self.__layer_num += len(model_config.get('layers', []))
         model = Sequential.from_config(model_config)
         model.add(layer)
@@ -103,7 +115,7 @@ class BaseLayer(object):
 
     def __add_network_layer(self, layer):
         """网络模型，上一层输入可能有多个模型"""
-        model_rdd_list = self.__model_rdd
+        model_rdd_list = self.model_rdd
         if not isinstance(model_rdd_list, list):
             model_rdd_list = [model_rdd_list]
 
@@ -111,7 +123,7 @@ class BaseLayer(object):
             output_model = Model(inputs=layer.input, outputs=layer.output)
             self.__layer_num += 1
         else:
-            if self.__model_rdd is None:
+            if self.model_rdd is None:
                 raise ValueError("neural network model first layer must be InputLayer!")
             inputs = []
             outputs = []
@@ -131,11 +143,11 @@ class BaseLayer(object):
 
     def _add_layer(self, layer):
         self.__layer_name = layer.__class__.__name__
-        if self.__model_rdd:
-            if isinstance(self.__model_rdd, list):
-                self.__model_type = self.__model_rdd[0].first().model_type
+        if self.model_rdd:
+            if isinstance(self.model_rdd, list):
+                self.__model_type = self.model_rdd[0].first().model_type
             else:
-                self.__model_type = self.__model_rdd.first().model_type
+                self.__model_type = self.model_rdd.first().model_type
         else:
             if isinstance(layer, InputLayer):
                 self.__model_type = ModelType.NETWORK

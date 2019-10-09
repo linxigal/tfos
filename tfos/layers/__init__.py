@@ -14,6 +14,7 @@ from .merge import *
 from .optimizer import *
 from .pooling import *
 from .recurrent import *
+from .tensorboard import TensorBoardLayer
 
 __all__ = [
     # input layer
@@ -34,4 +35,5 @@ __all__ = [
     "SimpleRNN", "GRU", "LSTM",
     # optimizer layer
     'SGDLayer', 'RMSpropLayer', 'AdagradLayer', 'AdadeltaLayer', 'AdamLayer', 'AdamaxLayer', 'NadamLayer',
+    'TensorBoardLayer',
 ]
