@@ -8,7 +8,7 @@
 :content:
   
 """
-
+import json
 from tensorflow.python.keras.layers import InputLayer, Dense, Add, Input
 from tensorflow.python.keras.models import Model, Sequential
 from tensorflow.python.keras.optimizers import SGD, serialize, deserialize
@@ -23,14 +23,33 @@ def network():
 
     add = Add()([dense1, dense2])
 
-    model = Model(inputs=[input1, input2], outputs=add)
+    # model = Model(inputs=[input1, input2], outputs=add)
+    model1 = Model(inputs=input1, outputs=input1)
+    model2 = Model(inputs=input2, outputs=dense2)
     # print(model.outputs)
-    print(model.inputs)
+    # print(model.inputs)
+    print("{:*^100}".format('network'))
+    config = model1.get_config()
+    print(len(config))
+    print(json.dumps(config, indent=4))
+
+
+def sequence():
+    model = Sequential()
+    model.add(Dense(666, input_shape=(784, )))
+    model.add(Dense(256))
+    print("{:*^100}".format('sequence'))
+    config = model.get_config()
+    print(len(config))
+    print(json.dumps(config, indent=4))
 
 
 def optimizer():
-    print(serialize(SGD()))
-    print(deserialize(serialize(SGD())))
+    # print(serialize(SGD()))
+    # print(deserialize(serialize(SGD())))
+    sgd = SGD()
+    print("{:*^100}".format('optimizer'))
+    print(json.dumps(serialize(SGD()), indent=4))
 
 
 def classes():
@@ -52,6 +71,7 @@ def classes():
 
 
 if __name__ == '__main__':
-    # network()
+    network()
+    sequence()
     # optimizer()
-    classes()
+    # classes()

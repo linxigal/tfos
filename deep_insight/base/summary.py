@@ -10,7 +10,7 @@ import json
 from tensorflow.python.keras.models import Sequential, Model
 
 from deep_insight.base import *
-from tfos.base import ModelType
+from tfos.base import ModelType, get_mode_type
 
 
 class SummaryLayer(Base):
@@ -28,10 +28,13 @@ class SummaryLayer(Base):
             raise ValueError("In Summary model_rdd cannot be empty！")
 
         model_config = json.loads(model_rdd.first().model_config)
-        if model_rdd.first().model_type == ModelType.SEQUENCE:
+        # model_name = model_config.get('name')
+        if get_mode_type(model_rdd) == ModelType.SEQUENCE:
             model = Sequential.from_config(model_config)
-        else:
+        elif get_mode_type(model_rdd) == ModelType.NETWORK:
             model = Model.from_config(model_config)
+        else:
+            raise ValueError("model type incorrect!!!")
 
         model.summary()
         outputRDD('<#zzjzRddName#>_Summary', model_rdd)

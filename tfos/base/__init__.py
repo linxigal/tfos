@@ -21,7 +21,7 @@ from .exception import ext_exception
 from .logger import logger
 
 __all__ = [
-    'get_model_config', 'BaseLayer',
+    'get_mode_type', 'gmt', 'BaseLayer',
     'ext_exception', 'logger',
     'valid_activations', 'valid_losses', 'valid_metrics', 'valid_optimizers', 'valid_regularizers',
     'ModelType', 'ROUND_NUM'
@@ -29,25 +29,44 @@ __all__ = [
 
 # 保留小数点位数
 ROUND_NUM = 6
+sequence = 'sequential'
+network = 'model'
 
 
 class ModelType:
-    SEQUENCE = 0
-    NETWORK = 1
-    COMPILE = 2
+    UNKNOWN = -1
+    EMPTY = 0
+    SEQUENCE = 1
+    NETWORK = 2
+    COMPILE = 3
 
 
-def get_model_config(model_rdd, can_first_layer=True, input_dim=None):
-    model_config = {}
-    if model_rdd:
-        model_config = json.loads(model_rdd.first().model_config)
+def gmt(model_config):
+    name = model_config.get('name')
+    if name.startswith(sequence):
+        return ModelType.SEQUENCE
+    elif name.startswith(network):
+        return ModelType.NETWORK
     else:
-        if can_first_layer:
-            if not input_dim:
-                raise ValueError("current node is first layer, the parameter input_dim must be positive!")
-        else:
-            raise ValueError('current node cannot be first layer!')
-    return model_config
+        raise ValueError('model type incorrect!!!')
+
+
+def get_mode_type(model_rdd):
+    names = []
+    if model_rdd:
+        models = model_rdd if isinstance(model_rdd, list) else [model_rdd]
+        for model_rdd in models:
+            model = model_rdd.first()
+            if 'model_config' in model:
+                names.append(gmt(json.loads(model.model_config)))
+            else:
+                names.append(ModelType.EMPTY)
+        names = list(set(names))
+        if len(names) > 1:
+            raise ValueError("model branch incorrect, {} must be same !!!".format(names))
+    else:
+        names.append(ModelType.UNKNOWN)
+    return names[0]
 
 
 class CustomEncoder(json.JSONEncoder):
@@ -66,7 +85,7 @@ class BaseLayer(object):
         self.__sqlc = sqlc
         self.__layer_num = 0
         self.__layer_name = ""
-        self.__model_type = ModelType.SEQUENCE
+        # self.__model_type = ModelType.SEQUENCE
 
     @property
     def model_rdd(self):
@@ -80,6 +99,25 @@ class BaseLayer(object):
     def sqlc(self):
         return self.__sqlc
 
+    @property
+    def model_name(self):
+        names = []
+        if not isinstance(self.model_rdd, list):
+            models = [self.model_rdd]
+        else:
+            models = self.model_rdd
+        for model_rdd in models:
+            if model_rdd:
+                model = model_rdd.first()
+                if 'model_config' in model:
+                    name = json.loads(model.model_config).get('name')
+                    names.append(name.split('_')[0])
+        names = list(set(names))
+        if len(names) > 1:
+            raise ValueError("model branch incorrect, {} must be same !!!".format('|'.join(names)))
+
+        return names[0] if names else ''
+
     def _add_or_create_column(self, name, value):
         if self.model_rdd:
             return self.model_rdd.withColumn(name, value)
@@ -90,7 +128,6 @@ class BaseLayer(object):
         data = {
             'layer_name': self.__layer_name,
             "layer_num": self.__layer_num,
-            'model_type': self.__model_type,
             name: json.dumps(model.get_config(), cls=CustomEncoder)
         }
         return self.sqlc.createDataFrame([Row(**data)])
@@ -143,27 +180,15 @@ class BaseLayer(object):
 
     def _add_layer(self, layer):
         self.__layer_name = layer.__class__.__name__
-        if self.model_rdd:
-            if isinstance(self.model_rdd, list):
-                self.__model_type = self.model_rdd[0].first().model_type
-            else:
-                self.__model_type = self.model_rdd.first().model_type
-        else:
-            if isinstance(layer, InputLayer):
-                self.__model_type = ModelType.NETWORK
-            elif isinstance(layer, (Optimizer, OptimizerV2)):
-                self.__model_type = ModelType.COMPILE
-            else:
-                self.__model_type = ModelType.SEQUENCE
 
-        if self.__model_type == ModelType.NETWORK:
+        model_type = get_mode_type(self.model_rdd)
+
+        if model_type == ModelType.NETWORK or isinstance(layer, InputLayer):
             return self.__add_network_layer(layer)
-        elif self.__model_type == ModelType.SEQUENCE:
-            return self.__add_sequence_layer(layer)
-        elif self.__model_type == ModelType.COMPILE:
+        elif model_type == ModelType.UNKNOWN and isinstance(layer, (Optimizer, OptimizerV2)):
             return self.__add_compile_layer(layer)
         else:
-            raise ValueError("unknown model type!!!")
+            return self.__add_sequence_layer(layer)
 
     def add(self):
         raise NotImplementedError

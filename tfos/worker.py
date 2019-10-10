@@ -16,7 +16,7 @@ from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
 from tensorflowonspark import TFNode
 
-from tfos.base import ModelType, ROUND_NUM
+from tfos.base import ModelType, gmt
 from tfos.base.gfile import ModelDir
 
 
@@ -105,7 +105,6 @@ class TrainWorker(Worker):
 
     def __init__(self, model_rdd, go_on, *args, **kwargs):
         super(TrainWorker, self).__init__(*args, **kwargs)
-        self.model_type = model_rdd.first().model_type
         self.model_config = json.loads(model_rdd.first().model_config)
         self.compile_config = json.loads(model_rdd.first().compile_config)
         self.go_on = go_on
@@ -131,12 +130,13 @@ class TrainWorker(Worker):
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            if self.model_type == ModelType.SEQUENCE:
+            model_type = gmt(self.model_config)
+            if model_type == ModelType.SEQUENCE:
                 model = Sequential.from_config(self.model_config)
-            elif self.model_type == ModelType.NETWORK:
+            elif model_type == ModelType.NETWORK:
                 model = Model.from_config(self.model_config)
             else:
-                raise ValueError("unknown model type!!!")
+                raise ValueError("{}, unknown model type!!!".format(model_type))
             self.parse_optimizer()
             model.compile(**self.compile_config)
             self.model = model
