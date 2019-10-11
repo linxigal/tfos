@@ -243,7 +243,7 @@ class TestModel(unittest.TestCase):
                    model_dir=self.model_dir,
                    go_on='true').run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_evaluate_model(self):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         EvaluateModel(input_prev_layers=MODEL_BRANCH,

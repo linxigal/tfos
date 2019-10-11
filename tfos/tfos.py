@@ -22,6 +22,12 @@ class TFOS(object):
         self.input_mode = input_mode
         self.cluster = None
 
+    @property
+    def num_workers(self):
+        num_workers = self.cluster_size - self.num_ps
+        assert num_workers > 0, "cluster_size, num_ps must be positive, and cluster_size > num_ps"
+        return num_workers
+
     @ext_exception("train model")
     def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir, go_on=False):
         columns = model_rdd.columns
@@ -41,7 +47,7 @@ class TFOS(object):
                              steps_per_epoch=steps_per_epoch,
                              **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd)
+        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=epochs)
         cluster.shutdown()
         return self.sqlc.createDataFrame(md.read_result())
 
@@ -52,7 +58,7 @@ class TFOS(object):
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd)
+        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=1)
         cluster.shutdown()
         return self.sqlc.createDataFrame(md.read_result())
 
@@ -65,6 +71,6 @@ class TFOS(object):
                                **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd)
+        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=1)
         cluster.shutdown()
         return self.sqlc.createDataFrame(md.read_result())
