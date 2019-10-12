@@ -43,13 +43,13 @@ class TrainModel(Base):
             boolean， 是否接着上次训练结果继续训练模型
     """
 
-    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, go_on='false', **kwargs):
+    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, steps_per_epoch='1', go_on='false', **kwargs):
         super(TrainModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
-        # self.p('steps_per_epoch', steps_per_epoch)
+        self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', [{"path": model_dir}])
         self.p('go_on', go_on)
 
@@ -67,6 +67,7 @@ class TrainModel(Base):
         num_ps = param.get('num_ps', 1)
         batch_size = param.get('batch_size', 32)
         epochs = param.get('epochs', 1)
+        steps_per_epoch = param.get('steps_per_epoch', 1)
         model_dir = param.get('model_dir')[0]['path']
         go_on = param.get('go_on', BOOLEAN[1])
 
@@ -75,6 +76,7 @@ class TrainModel(Base):
         num_ps = int(num_ps)
         batch_size = int(batch_size)
         epochs = int(epochs)
+        steps_per_epoch = int(steps_per_epoch)
         go_on = convert_bool(go_on)
 
         # load data
@@ -90,9 +92,11 @@ class TrainModel(Base):
                                                                batch_size=batch_size,
                                                                epochs=epochs,
                                                                model_dir=model_dir,
+                                                               steps_per_epoch=steps_per_epoch,
                                                                go_on=go_on)
-        output_df.show()
-        outputRDD('<#zzjzRddName#>_train_result', output_df)
+        if output_df:
+            output_df.show()
+            outputRDD('<#zzjzRddName#>_train_result', output_df)
 
 
 class EvaluateModel(Base):
@@ -140,8 +144,9 @@ class EvaluateModel(Base):
         assert input_rdd, "cannot get rdd data from previous input layer!"
 
         output_df = TFOS(sc, sqlc, cluster_size, num_ps).evaluate(input_rdd, steps, model_dir)
-        output_df.show()
-        outputRDD('<#zzjzRddName#>_evaluate_result', output_df)
+        if output_df:
+            output_df.show()
+            outputRDD('<#zzjzRddName#>_evaluate_result', output_df)
 
 
 class PredictModel(Base):
@@ -161,7 +166,7 @@ class PredictModel(Base):
             boolean，是否输出每个样本在所有分类类别上的详细概率值
     """
 
-    def __init__(self, cluster_size, num_ps, steps, model_dir, output_prob, **kwargs):
+    def __init__(self, cluster_size, num_ps, steps, model_dir, output_prob='false', **kwargs):
         super(PredictModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
@@ -196,8 +201,9 @@ class PredictModel(Base):
         assert input_rdd, "cannot get rdd data from previous input layer!"
 
         output_df = TFOS(sc, sqlc, cluster_size, num_ps).predict(input_rdd, steps, model_dir, output_prob)
-        output_df.show()
-        outputRDD('<#zzjzRddName#>_predict_result', output_df)
+        if output_df:
+            output_df.show()
+            outputRDD('<#zzjzRddName#>_predict_result', output_df)
 
 
 class TestModel(unittest.TestCase):
@@ -230,7 +236,7 @@ class TestModel(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_train_model(self):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         self.build_model()
@@ -241,7 +247,7 @@ class TestModel(unittest.TestCase):
                    batch_size=32,
                    epochs=2,
                    model_dir=self.model_dir,
-                   go_on='true').run()
+                   go_on='false').run()
 
     @unittest.skip("")
     def test_evaluate_model(self):

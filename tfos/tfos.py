@@ -29,12 +29,12 @@ class TFOS(object):
         return num_workers
 
     @ext_exception("train model")
-    def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir, go_on=False):
+    def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir, steps_per_epoch=0, go_on=False):
         columns = model_rdd.columns
         assert "model_config" in columns, "not exists model layer config!"
         assert "compile_config" in columns, "not exists model compile config!"
-        n_samples = data_rdd.count()
-        steps_per_epoch = n_samples // batch_size
+        # n_samples = data_rdd.count()
+        # steps_per_epoch = n_samples // batch_size
         md = ModelDir(model_dir, 'train*')
         if go_on:
             md.create_model_dir()
@@ -47,9 +47,11 @@ class TFOS(object):
                              steps_per_epoch=steps_per_epoch,
                              **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=epochs)
+        cluster.train(data_rdd.rdd, num_epochs=epochs)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result())
+        results = md.read_result()
+        if results:
+            return self.sqlc.createDataFrame(results)
 
     @ext_exception('evaluate model')
     def evaluate(self, data_rdd, steps, model_dir):
@@ -58,9 +60,11 @@ class TFOS(object):
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=1)
+        cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result())
+        results = md.read_result()
+        if results:
+            return self.sqlc.createDataFrame(results)
 
     @ext_exception('predict model')
     def predict(self, data_rdd, steps, model_dir, output_prob=False):
@@ -71,6 +75,8 @@ class TFOS(object):
                                **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd.repartition(self.num_workers), num_epochs=1)
+        cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
-        return self.sqlc.createDataFrame(md.read_result())
+        results = md.read_result()
+        if results:
+            return self.sqlc.createDataFrame(results)

@@ -66,7 +66,8 @@ class TestLeNet(unittest.TestCase):
                    num_ps=1,
                    batch_size=32,
                    epochs=2,
-                   model_dir=self.model_dir).run()
+                   model_dir=self.model_dir,
+                   go_on='false').run()
 
     @unittest.skip("")
     def test_lenet_evaluate(self):
@@ -90,7 +91,8 @@ class TestLeNet(unittest.TestCase):
                      cluster_size=2,
                      num_ps=1,
                      steps=10,
-                     model_dir=self.model_dir).run()
+                     model_dir=self.model_dir,
+                     output_prob='true').run()
 
 
 if __name__ == '__main__':
