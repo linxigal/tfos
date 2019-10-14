@@ -60,7 +60,7 @@ class TestLeNet(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_alexnet_train(self):
         # load train data
         Mnist(self.mnist_dir, mode='test', is_conv='true').b(DATA_BRANCH).run()
@@ -72,7 +72,7 @@ class TestLeNet(unittest.TestCase):
                    cluster_size=2,
                    num_ps=1,
                    batch_size=32,
-                   epochs=1,
+                   epochs=2,
                    model_dir=self.model_dir,
                    go_on='false').run()
 

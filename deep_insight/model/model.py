@@ -43,13 +43,13 @@ class TrainModel(Base):
             boolean， 是否接着上次训练结果继续训练模型
     """
 
-    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, steps_per_epoch='1', go_on='false', **kwargs):
+    def __init__(self, cluster_size, num_ps, batch_size, epochs, model_dir, go_on='false', **kwargs):
         super(TrainModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('batch_size', batch_size)
         self.p('epochs', epochs)
-        self.p('steps_per_epoch', steps_per_epoch)
+        # self.p('steps_per_epoch', steps_per_epoch)
         self.p('model_dir', [{"path": model_dir}])
         self.p('go_on', go_on)
 
@@ -67,7 +67,6 @@ class TrainModel(Base):
         num_ps = param.get('num_ps', 1)
         batch_size = param.get('batch_size', 32)
         epochs = param.get('epochs', 1)
-        steps_per_epoch = param.get('steps_per_epoch', 1)
         model_dir = param.get('model_dir')[0]['path']
         go_on = param.get('go_on', BOOLEAN[1])
 
@@ -76,7 +75,6 @@ class TrainModel(Base):
         num_ps = int(num_ps)
         batch_size = int(batch_size)
         epochs = int(epochs)
-        steps_per_epoch = int(steps_per_epoch)
         go_on = convert_bool(go_on)
 
         # load data
@@ -92,7 +90,6 @@ class TrainModel(Base):
                                                                batch_size=batch_size,
                                                                epochs=epochs,
                                                                model_dir=model_dir,
-                                                               steps_per_epoch=steps_per_epoch,
                                                                go_on=go_on)
         if output_df:
             output_df.show()
