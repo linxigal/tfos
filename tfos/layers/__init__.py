@@ -9,12 +9,14 @@
 from .activation import *
 from .convolution import *
 from .core import *
+from .embeddings import *
 from .input import *
 from .merge import *
 from .optimizer import *
 from .pooling import *
 from .recurrent import *
-from .tensorboard import TensorBoardLayer
+from .tensorboard import *
+from .normalization import *
 
 __all__ = [
     # input layer
@@ -36,4 +38,6 @@ __all__ = [
     # optimizer layer
     'SGDLayer', 'RMSpropLayer', 'AdagradLayer', 'AdadeltaLayer', 'AdamLayer', 'AdamaxLayer', 'NadamLayer',
     'TensorBoardLayer',
+    'EmbeddingLayer',
+    'BatchNormalizationLayer',
 ]
