@@ -233,13 +233,13 @@ class TestModel(unittest.TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_train_model(self):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         self.build_model()
         TrainModel(input_prev_layers=MODEL_BRANCH,
                    input_rdd_name=DATA_BRANCH,
-                   cluster_size=2,
+                   cluster_size=3,
                    num_ps=1,
                    batch_size=32,
                    epochs=2,
@@ -251,7 +251,7 @@ class TestModel(unittest.TestCase):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         EvaluateModel(input_prev_layers=MODEL_BRANCH,
                       input_rdd_name=DATA_BRANCH,
-                      cluster_size=2,
+                      cluster_size=3,
                       num_ps=1,
                       steps=0,
                       model_dir=self.model_dir).run()
@@ -261,7 +261,7 @@ class TestModel(unittest.TestCase):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         PredictModel(input_prev_layers=MODEL_BRANCH,
                      input_rdd_name=DATA_BRANCH,
-                     cluster_size=2,
+                     cluster_size=3,
                      num_ps=1,
                      steps=10,
                      model_dir=self.model_dir,
