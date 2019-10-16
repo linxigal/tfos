@@ -7,8 +7,6 @@
 
 import os
 
-import numpy as np
-import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets.mnist import extract_images, extract_labels
 from tensorflow.python.keras.datasets.mnist import load_data
 
@@ -114,43 +112,3 @@ class Mnist(BaseData):
             return self.sc.parallelize(zip(*train_data))
         else:
             return self.sc.parallelize(zip(*train_data))
-
-    @staticmethod
-    def convert_conv(row):
-        x = np.reshape(row[0], (28, 28, 1))
-        return x, row[1]
-
-    @staticmethod
-    def convert_flatten(row):
-        x = np.reshape(row[0], (784,))
-        return x, row[1]
-
-    @staticmethod
-    def convert_one(row):
-        y = row[1]
-        if not isinstance(row[1], np.ndarray):
-            y = np.zeros([10])
-            y[row[1]] = 1
-        return row[0], y
-
-    @staticmethod
-    def to_string(row):
-        x, y = row
-        if isinstance(x, np.ndarray):
-            x = x.tolist()
-        if isinstance(y, np.ndarray):
-            y = y.tolist()
-        return x, y
-
-    @staticmethod
-    def from_csv(s):
-        return np.array([float(x) for x in s.split(',') if len(s) > 0])
-
-    @staticmethod
-    def tfr2sample(byte_str):
-        example = tf.train.Example()
-        example.ParseFromString(byte_str)
-        features = example.features.feature
-        image = np.array(features['image'].int64_list.value)
-        label = np.array(features['label'].int64_list.value)
-        return image, label

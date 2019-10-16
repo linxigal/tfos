@@ -11,6 +11,7 @@
 import os
 
 import numpy as np
+import pickle as p
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.datasets.cifar import load_batch
 
@@ -34,6 +35,7 @@ class Cifar10(BaseData):
     @property
     def train_df(self):
         rdd = self.sc.parallelize(zip(*self.load_train()))
+        # rdd = self.sc.parallelize(zip(*self.load_CIFAR10()))
         return self.rdd2df(rdd)
 
     @property
@@ -41,29 +43,59 @@ class Cifar10(BaseData):
         rdd = self.sc.parallelize(zip(*self.load_test()))
         return self.rdd2df(rdd)
 
+    @staticmethod
+    def load_CIFAR_batch(filename):
+        """ 载入cifar数据集的一个batch """
+        with open(filename, 'rb') as f:
+            datadict = p.load(f, encoding='latin1')
+            X = datadict['data']
+            Y = datadict['labels']
+            X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
+            Y = np.array(Y)
+            return X, Y
+
+    def load_CIFAR10(self):
+        """ 载入cifar全部数据 """
+        xs = []
+        ys = []
+        for b in range(1, 2):
+            f = os.path.join(self.path, 'data_batch_%d' % (b,))
+            X, Y = self.load_CIFAR_batch(f)
+            xs.append(X)  # 将所有batch整合起来
+            ys.append(Y)
+        Xtr = np.concatenate(xs)  # 使变成行向量,最终Xtr的尺寸为(50000,32,32,3)
+        Ytr = np.concatenate(ys)
+        if self.one_hot:
+            Xtr = self.convert_one_hot(Xtr, self.num_class)
+
+        if self.flat:
+            Ytr = Ytr.reshape((self.num_test_samples, self.height * self.width * self.channel))
+        return Xtr.tolist(), Ytr.tolist()
+
     def load_train(self):
         x_train = np.empty((self.num_train_samples, self.channel, self.height, self.width), dtype='uint8')
         y_train = np.empty((self.num_train_samples,), dtype='uint8')
 
         for i in range(self.batch_size):
             fpath = os.path.join(self.path, 'data_batch_' + str(i + 1))
-            (x_train[i * self.num_batch_samples:i * self.num_batch_samples, :, :, :],
-             y_train[i * self.num_batch_samples:i * self.num_batch_samples]) = load_batch(fpath)
+            (x_train[i * self.num_batch_samples:(i + 1) * self.num_batch_samples, :, :, :],
+             y_train[i * self.num_batch_samples:(i + 1) * self.num_batch_samples]) = load_batch(fpath)
 
         if K.image_data_format() == 'channels_last':
             x_train = x_train.transpose(*self.transpose)
-
         if self.one_hot:
             y_train = self.convert_one_hot(y_train, self.num_class)
 
         if self.flat:
             x_train = x_train.reshape((self.num_train_samples, self.height * self.width * self.channel))
 
-        return x_train.tolist(), y_train
+        return x_train.tolist(), y_train.tolist()
 
     def load_test(self):
         fpath = os.path.join(self.path, 'test_batch')
         x_test, y_test = load_batch(fpath)
+        x_test = np.array(x_test)
+        y_test = np.array(y_test)
 
         if K.image_data_format() == 'channels_last':
             x_test = x_test.transpose(*self.transpose)
@@ -74,7 +106,7 @@ class Cifar10(BaseData):
         if self.flat:
             x_test = x_test.reshape((self.num_test_samples, self.height * self.width * self.channel))
 
-        return x_test.tolist(), y_test
+        return x_test.tolist(), y_test.tolist()
 
 
 class Cifar100(BaseData):
@@ -109,6 +141,8 @@ class Cifar100(BaseData):
     def load_data(self, mode, shape):
         fpath = os.path.join(self.path, mode)
         x, y = load_batch(fpath, label_key=self.label_mode + '_labels')
+        x = np.array(x)
+        y = np.array(y)
 
         if K.image_data_format() == 'channels_last':
             x = x.transpose(self.transpose)
@@ -119,4 +153,4 @@ class Cifar100(BaseData):
         if self.flat:
             x = x.reshape(shape)
 
-        return x.tolist(), y
+        return x.tolist(), y.tolist()

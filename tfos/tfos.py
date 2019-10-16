@@ -34,7 +34,7 @@ class TFOS(object):
         assert "model_config" in columns, "not exists model layer config!"
         assert "compile_config" in columns, "not exists model compile config!"
         n_samples = data_rdd.count()
-        steps_per_epoch = n_samples // batch_size
+        steps_per_epoch = n_samples * epochs // batch_size // self.num_workers
         md = ModelDir(model_dir, 'train*')
         if go_on:
             md.create_model_dir()
@@ -47,7 +47,7 @@ class TFOS(object):
                              steps_per_epoch=steps_per_epoch,
                              **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=epochs + 1)
+        cluster.train(data_rdd.rdd, num_epochs=epochs)
         cluster.shutdown()
         results = md.read_result()
         if results:
@@ -57,10 +57,11 @@ class TFOS(object):
     def evaluate(self, data_rdd, steps, model_dir):
         md = ModelDir(model_dir, 'evaluate*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
+        steps_per_epoch = steps_per_epoch // self.num_workers
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=2)
+        cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
         results = md.read_result()
         if results:
@@ -70,12 +71,13 @@ class TFOS(object):
     def predict(self, data_rdd, steps, model_dir, output_prob=False):
         md = ModelDir(model_dir, 'predict*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
+        steps_per_epoch = steps_per_epoch // self.num_workers
         worker = PredictWorker(steps_per_epoch=steps_per_epoch,
                                output_prob=output_prob,
                                **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=2)
+        cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
         results = md.read_result()
         if results:
