@@ -64,6 +64,8 @@ class Worker(object):
             batches = self.tf_feed.next_batch(self.batch_size)
             inputs = []
             labels = []
+            if not batches:
+                raise StopIteration()
             for row in batches:
                 inputs.append(row.feature)
                 labels.append(row.label)
@@ -165,6 +167,7 @@ class TrainWorker(Worker):
                                            steps_per_epoch=self.steps_per_epoch,
                                            epochs=self.epochs + self.initial_epoch,
                                            callbacks=callbacks,
+                                           workers=0,
                                            initial_epoch=self.initial_epoch)
             self.save_model()
             ModelDir.write_result(result_file, self.get_results(his), self.go_on)

@@ -9,13 +9,31 @@
   
 """
 import os
+import sys
 
 import numpy as np
-import pickle as p
+import tensorflow as tf
+from six.moves import cPickle
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.datasets.cifar import load_batch
 
 from tfos.data import BaseData
+
+
+def load_batch(fpath, label_key='labels'):
+    with tf.gfile.Open(fpath, 'rb') as f:
+        if sys.version_info < (3,):
+            d = cPickle.load(f)
+        else:
+            d = cPickle.load(f, encoding='bytes')
+            d_decoded = {}
+            for k, v in d.items():
+                d_decoded[k.decode('utf8')] = v
+            d = d_decoded
+    data = d['data']
+    labels = d[label_key]
+
+    data = data.reshape(data.shape[0], 3, 32, 32)
+    return data, labels
 
 
 class Cifar10(BaseData):
@@ -35,42 +53,12 @@ class Cifar10(BaseData):
     @property
     def train_df(self):
         rdd = self.sc.parallelize(zip(*self.load_train()))
-        # rdd = self.sc.parallelize(zip(*self.load_CIFAR10()))
         return self.rdd2df(rdd)
 
     @property
     def test_df(self):
         rdd = self.sc.parallelize(zip(*self.load_test()))
         return self.rdd2df(rdd)
-
-    @staticmethod
-    def load_CIFAR_batch(filename):
-        """ 载入cifar数据集的一个batch """
-        with open(filename, 'rb') as f:
-            datadict = p.load(f, encoding='latin1')
-            X = datadict['data']
-            Y = datadict['labels']
-            X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
-            Y = np.array(Y)
-            return X, Y
-
-    def load_CIFAR10(self):
-        """ 载入cifar全部数据 """
-        xs = []
-        ys = []
-        for b in range(1, 2):
-            f = os.path.join(self.path, 'data_batch_%d' % (b,))
-            X, Y = self.load_CIFAR_batch(f)
-            xs.append(X)  # 将所有batch整合起来
-            ys.append(Y)
-        Xtr = np.concatenate(xs)  # 使变成行向量,最终Xtr的尺寸为(50000,32,32,3)
-        Ytr = np.concatenate(ys)
-        if self.one_hot:
-            Xtr = self.convert_one_hot(Xtr, self.num_class)
-
-        if self.flat:
-            Ytr = Ytr.reshape((self.num_test_samples, self.height * self.width * self.channel))
-        return Xtr.tolist(), Ytr.tolist()
 
     def load_train(self):
         x_train = np.empty((self.num_train_samples, self.channel, self.height, self.width), dtype='uint8')
