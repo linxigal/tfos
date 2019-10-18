@@ -57,6 +57,7 @@ class Mnist(Base):
 
         mnist = Mnist(sc=sc, path=mnist_dir, data_format=data_format, one_hot=one_hot, flat=not is_conv)
         output_df = mnist.train_df if mode == 'train' else mnist.test_df
+        output_df.show()
         outputRDD('<#zzjzRddName#>_mnist_{}'.format(mode), output_df)
 
 

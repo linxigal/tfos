@@ -5,6 +5,7 @@
 :Time: 2019/5/24 14:01
 :File       : tfos.py
 """
+import math
 
 from tensorflowonspark import TFCluster
 
@@ -34,7 +35,8 @@ class TFOS(object):
         assert "model_config" in columns, "not exists model layer config!"
         assert "compile_config" in columns, "not exists model compile config!"
         n_samples = data_rdd.count()
-        steps_per_epoch = n_samples * epochs // batch_size // self.num_workers
+        # steps_per_epoch = n_samples // batch_size // self.num_workers + 1
+        steps_per_epoch = math.ceil(n_samples / batch_size / self.num_workers)
         md = ModelDir(model_dir, 'train*')
         if go_on:
             md.create_model_dir()
@@ -57,7 +59,7 @@ class TFOS(object):
     def evaluate(self, data_rdd, steps, model_dir):
         md = ModelDir(model_dir, 'evaluate*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
-        steps_per_epoch = steps_per_epoch // self.num_workers
+        steps_per_epoch = math.ceil(steps_per_epoch / self.num_workers)
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
@@ -71,7 +73,7 @@ class TFOS(object):
     def predict(self, data_rdd, steps, model_dir, output_prob=False):
         md = ModelDir(model_dir, 'predict*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
-        steps_per_epoch = steps_per_epoch // self.num_workers
+        steps_per_epoch = math.ceil(steps_per_epoch / self.num_workers)
         worker = PredictWorker(steps_per_epoch=steps_per_epoch,
                                output_prob=output_prob,
                                **md.to_dict())
