@@ -83,8 +83,8 @@ class BaseLayer(object):
         self.__model_rdd = model_rdd
         self.__sc = sc
         self.__sqlc = sqlc
-        self.__layer_num = 0
-        self.__layer_name = ""
+        self.layer_num = 0
+        self.layer_name = ""
         # self.__model_type = ModelType.SEQUENCE
 
     @property
@@ -126,8 +126,8 @@ class BaseLayer(object):
 
     def model2df(self, model, name='model_config'):
         data = {
-            'layer_name': self.__layer_name,
-            "layer_num": self.__layer_num,
+            'layer_name': self.layer_name,
+            "layer_num": self.layer_num,
             name: json.dumps(model.get_config(), cls=CustomEncoder)
         }
         return self.sqlc.createDataFrame([Row(**data)])
@@ -144,10 +144,10 @@ class BaseLayer(object):
         model_config = {}
         if self.model_rdd:
             model_config = json.loads(self.model_rdd.first().model_config)
-            self.__layer_num += len(model_config.get('layers', []))
+            self.layer_num += len(model_config.get('layers', []))
         model = Sequential.from_config(model_config)
         model.add(layer)
-        self.__layer_num += 1
+        self.layer_num += 1
         return self.model2df(model)
 
     def __add_network_layer(self, layer):
@@ -158,7 +158,7 @@ class BaseLayer(object):
 
         if isinstance(layer, InputLayer):
             output_model = Model(inputs=layer.input, outputs=layer.output)
-            self.__layer_num += 1
+            self.layer_num += 1
         else:
             if self.model_rdd is None:
                 raise ValueError("neural network model first layer must be InputLayer!")
@@ -166,20 +166,20 @@ class BaseLayer(object):
             outputs = []
             for model_rdd in model_rdd_list:
                 model_config = json.loads(model_rdd.first().model_config)
-                self.__layer_num += len(model_config.get('layers', []))
+                self.layer_num += len(model_config.get('layers', []))
                 input_model = Model.from_config(model_config)
                 inputs.extend(input_model.inputs)
                 outputs.extend(input_model.outputs)
             outputs = outputs[0] if len(outputs) == 1 else outputs
             output_model = Model(inputs=inputs, outputs=layer(outputs))
-            self.__layer_num += 1
+            self.layer_num += 1
         return self.model2df(output_model)
 
     def __add_compile_layer(self, layer):
         return self._add_or_create_column('optimizer', json.dumps(serialize(layer)))
 
     def _add_layer(self, layer):
-        self.__layer_name = layer.__class__.__name__
+        self.layer_name = layer.__class__.__name__
 
         model_type = get_mode_type(self.model_rdd)
 
