@@ -13,3 +13,6 @@ PARAM_MAP = dict(
     metrics=valid_metrics,
 
 )
+
+MODEL_CONFIG = 'model_config'
+MODEL_COMPILE = 'model_compile'

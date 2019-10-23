@@ -7,16 +7,17 @@
 """
 
 from .activation import *
+from .block import *
 from .convolution import *
 from .core import *
 from .embeddings import *
 from .input import *
 from .merge import *
+from .normalization import *
 from .optimizer import *
 from .pooling import *
 from .recurrent import *
 from .tensorboard import *
-from .normalization import *
 
 __all__ = [
     # input layer
@@ -40,4 +41,5 @@ __all__ = [
     'TensorBoardLayer',
     'EmbeddingLayer',
     'BatchNormalizationLayer',
+    'RepeatBegin', 'RepeatEnd'
 ]
