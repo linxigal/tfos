@@ -41,5 +41,5 @@ __all__ = [
     'TensorBoardLayer',
     'EmbeddingLayer',
     'BatchNormalizationLayer',
-    'RepeatBegin', 'RepeatEnd'
+    'RepeatBegin', 'RepeatEnd', 'RepeatBranch',
 ]

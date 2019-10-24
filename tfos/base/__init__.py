@@ -85,7 +85,7 @@ class BaseLayer(object):
         self.__sqlc = sqlc
         self.layer_num = 0
         self.layer_name = ""
-        # self.__model_type = ModelType.SEQUENCE
+        self.model = None
 
     @property
     def model_rdd(self):
@@ -192,3 +192,16 @@ class BaseLayer(object):
 
     def add(self):
         raise NotImplementedError
+
+    @staticmethod
+    def convert2model(model_config):
+        if 'name' not in model_config:
+            raise ValueError("config is not a model config!")
+        name = model_config['name'] or ''
+        if name.startswith('model'):
+            model = Model.from_config(model_config)
+        elif name.startswith('sequential'):
+            model = Sequential.from_config(model_config)
+        else:
+            raise ValueError("model config incorrect!")
+        return model
