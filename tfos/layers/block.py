@@ -11,7 +11,7 @@
 
 import json
 
-from tensorflow.python.keras.layers import deserialize
+from tensorflow.python.keras.layers import deserialize, InputLayer
 from tensorflow.python.keras.models import Model, Sequential
 
 from tfos.base import BaseLayer, ext_exception
@@ -71,3 +71,27 @@ class RepeatEnd(BaseLayer):
                 self.layer_num += 1
                 output = layer(self.model.output)
                 self.model = Model(inputs=self.model.inputs, outputs=output)
+
+
+class RepeatBranch(BaseLayer):
+    def __init__(self, *args, **kwargs):
+        super(RepeatBranch, self).__init__(*args, **kwargs)
+        self.model = None
+
+    @ext_exception("RepeatBranch Layer")
+    def add(self, branch_rdd, repeats=0):
+        branch_model_config = json.loads(getattr(branch_rdd.first(), MODEL_CONFIG))
+        model_config = json.loads(getattr(self.model_rdd.first(), MODEL_CONFIG))
+        model = self.convert2model(model_config)
+        x = model.output
+        for i in range(repeats):
+            for lv in branch_model_config['layers']:
+                layer = deserialize(lv)
+                if isinstance(layer, InputLayer):
+                    continue
+                layer._name = layer.name + '_repeat_{}'.format(i + 1)
+                self.layer_name = layer.name
+                self.layer_num += 1
+                x = layer(x)
+        self.model = Model(inputs=model.inputs, outputs=x)
+        return self.model2df(self.model)
