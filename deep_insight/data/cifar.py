@@ -53,6 +53,7 @@ class Cifar10(Base):
 
         cifar = Cifar10(sc=sc, path=data_dir, one_hot=convert_bool(one_hot), flat=convert_bool(flat))
         output_df = cifar.train_df if mode == 'train' else cifar.test_df
+        output_df.persist()
         output_df.show()
         outputRDD('<#zzjzRddName#>_cifar10_{}'.format(mode), output_df)
 
@@ -95,6 +96,7 @@ class Cifar100(Base):
 
         cifar = Cifar100(sc=sc, path=data_dir, one_hot=convert_bool(one_hot), flat=convert_bool(flat))
         output_df = cifar.train_df if mode == 'train' else cifar.test_df
+        output_df.persist()
         output_df.show()
         outputRDD('<#zzjzRddName#>_cifar100_{}'.format(mode), output_df)
 

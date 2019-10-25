@@ -32,7 +32,7 @@ def hosts(servers, user='default'):
     :return: None
     """
     env.hosts = []
-    remote_hosts = [str(i) for i in range(100, 103)]
+    remote_hosts = [str(i) for i in range(100, 120)]
     for host in servers.split():
         if host in remote_hosts:
             login_user = 'root' if user == 'default' else user
