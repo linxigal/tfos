@@ -22,6 +22,7 @@ class TFOS(object):
         self.num_ps = num_ps
         self.input_mode = input_mode
         self.cluster = None
+        self.tf_args = {}
 
     @property
     def num_workers(self):
@@ -48,7 +49,7 @@ class TFOS(object):
                              epochs=epochs,
                              steps_per_epoch=steps_per_epoch,
                              **md.to_dict())
-        cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
+        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd, num_epochs=epochs)
         cluster.shutdown()
         results = md.read_result()
@@ -62,7 +63,7 @@ class TFOS(object):
         steps_per_epoch = math.ceil(steps_per_epoch / self.num_workers)
         worker = EvaluateWorker(steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
-        cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
+        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
         results = md.read_result()
@@ -78,7 +79,7 @@ class TFOS(object):
                                output_prob=output_prob,
                                **md.to_dict())
         md.delete_result_file()
-        cluster = TFCluster.run(self.sc, worker, None, self.cluster_size, self.num_ps, input_mode=self.input_mode)
+        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps, input_mode=self.input_mode)
         cluster.train(data_rdd.rdd, num_epochs=1)
         cluster.shutdown()
         results = md.read_result()

@@ -17,7 +17,7 @@ env.source_virtualenvwrapper = 'export WORKON_HOME=$HOME/.virtualenvs && source 
 env.python_path = 'export PYTHONPATH=$(pwd)'
 env.virtualenv_workon_prefix = env.source_virtualenvwrapper + ' && workon %s'
 
-env.work_dir = '/home/wjl/gitlab/tfos'  # 项目目录(必须填写)
+env.work_dir = '/home/zzjz/gitlab/tfos'  # 项目目录(必须填写)
 env.work_on = ''  # workon 项目名称(必须填写)
 env.requirement_dir = ''  # requirements.txt 所在目录,相对于项目目录,如 ./deploy
 env.pypi_index_url = 'http://pypi.zzjz.com:3141/simple'
@@ -32,7 +32,7 @@ def hosts(servers, user='default'):
     :return: None
     """
     env.hosts = []
-    remote_hosts = [str(i) for i in range(100, 120)]
+    remote_hosts = [str(i) for i in range(50, 120)]
     for host in servers.split():
         if host in remote_hosts:
             login_user = 'root' if user == 'default' else user

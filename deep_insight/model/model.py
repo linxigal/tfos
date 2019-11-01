@@ -241,7 +241,7 @@ class TestModel(unittest.TestCase):
                    input_rdd_name=DATA_BRANCH,
                    cluster_size=3,
                    num_ps=1,
-                   batch_size=32,
+                   batch_size=4,
                    epochs=2,
                    model_dir=self.model_dir,
                    go_on='false').run()

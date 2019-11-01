@@ -152,7 +152,9 @@ class TrainWorker(Worker):
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
-        with tf.Session(self.server.target) as sess:
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
+        with tf.Session(self.server.target, config=config) as sess:
             K.set_session(sess)
             if self.go_on:
                 self.restore_model()
