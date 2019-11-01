@@ -109,3 +109,4 @@ tensorboard/
 executor_id
 spark-warehouse/
 data/
+.release.json
