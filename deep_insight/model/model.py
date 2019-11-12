@@ -39,7 +39,7 @@ class TrainModel(Base):
             对传入的数据集，训练模型时需要迭代的次数
         model_dir: 模型保存路径
             保存路径下会自动生成tensorboard目录，checkpoint目录以及save_model目录
-        go_on: 继续训练：
+        go_on: 继续训练
             boolean， 是否接着上次训练结果继续训练模型
     """
 
