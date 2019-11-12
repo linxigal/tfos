@@ -8,116 +8,62 @@
 :content:
   
 """
-import json
+import tensorflow as tf
+from deep_insight import *
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import InputLayer, Dense, Add, Input, Dropout
-from tensorflow.python.keras.models import Model, Sequential
-from tensorflow.python.keras.optimizers import SGD, serialize, deserialize
+from tensorflow.python.keras.models import Model, Sequential, load_model
+from tensorflow.python.keras.datasets.mnist import load_data
+from tensorflow.python.keras.utils import to_categorical
 
 
-def network():
-    input1 = Input((784,))
-    input2 = Input((256,))
-
-    dense1 = Dense(666)(input1)
-    dense2 = Dense(666)(input2)
-    d = Dense(123)
-    d._init_set_name('test')
-    print(d.get_config())
-
-    drop1 = Dropout(0.5)(dense1)
-    dense3 = Dense(666)(drop1)
-
-    add = Add()([dense3, dense2])
-
-    # model = Model(inputs=input1, outputs=dense3)
-    model = Model(inputs=[input1, input2], outputs=add)
-    # model1 = Model(inputs=input1, outputs=input1)
-    # model2 = Model(inputs=input2, outputs=dense2)
-    # print(model.outputs)
-    # print(model.inputs)
-    print("{:*^100}".format('network'))
-    config = model.get_config()
-    print(len(config))
-    # print(json.dumps(config, indent=4))
-    # model = Sequential.from_config(config)
+def build_model():
+    input_data = Input((784,))
+    dense1 = Dense(512, activation='relu')(input_data)
+    dropout1 = Dropout(0.2)(dense1)
+    dense2 = Dense(512, activation='relu')(dropout1)
+    dropout2 = Dropout(0.2)(dense2)
+    dense3 = Dense(10)(dropout2)
+    model = Model(inputs=input_data, outputs=dense3)
+    model.compile('adadelta', 'categorical_crossentropy', ['accuracy'])
+    # model.compile('rmsprop', 'categorical_crossentropy', ['accuracy'])
     # model.summary()
-    # print(model.layers)
+    return model
 
 
-def sequence():
-    model = Sequential()
-    model.add(Dense(666, input_shape=(784, )))
-    model.add(Dense(256))
-    print("{:*^100}".format('sequence'))
-    config = model.get_config()
-    print(len(config))
-    # print(json.dumps(config, indent=4))
-    # model = Model.from_config(config)
-    # model.summary()
+def train_model(model):
+    path = os.path.join(ROOT_PATH, 'data/data/mnist/npz/mnist.npz')
+    save_path = os.path.join(ROOT_PATH, 'data/model/mnist_mlp/save_model/model.h5')
+    (x_train, y_train), (x_test, y_test) = load_data(path)
+
+    x_train = x_train.reshape(-1, 784) / 255.0
+    y_train = to_categorical(y_train, 10)
+
+    with tf.Session() as sess:
+        K.set_session(sess)
+        for i in range(1):
+            his = model.fit(x_train, y_train, 32)
+            print(his.history)
+        model.save(save_path)
 
 
-def optimizer():
-    # print(serialize(SGD()))
-    # print(deserialize(serialize(SGD())))
-    sgd = SGD()
-    print("{:*^100}".format('optimizer'))
-    print(json.dumps(serialize(SGD()), indent=4))
+def evaluate_model():
+    path = os.path.join(ROOT_PATH, 'data/data/mnist/npz/mnist.npz')
+    # save_path = os.path.join(ROOT_PATH, 'data/model/MLP/mlp.h5')
+    save_path = os.path.join(ROOT_PATH, 'data/model/mnist_mlp/save_model/model.h5')
+    (x_train, y_train), (x_test, y_test) = load_data(path)
 
+    x_test = x_train.reshape(-1, 784) / 255
+    y_test = to_categorical(y_train, 10)
 
-def classes():
-    class A(object):
-        def __init__(self, a, **kwargs):
-            self.a = a
-            print(a)
-
-    class B(object):
-        def __init__(self, b, **kwargs):
-            self.b = b
-            print(b)
-
-    class C(A, B):
-        def __init__(self, **kwargs):
-            super(C, self).__init__(**kwargs)
-
-    C(a=5, b=6)
-
-
-def merge():
-    # model1
-    input1 = Input((784,))
-    dense = Dense(256)(input1)
-    drop = Dropout(0.5)(dense)
-    dense1 = Dense(64)(drop)
-    model1 = Model(inputs=input1, outputs=dense1)
-    # print(json.dumps(model1.get_config(), indent=4))
-
-    # model2
-    model2 = Sequential()
-    # model2.add(InputLayer((784,)))
-    model2.add(Dense(128, input_shape=(64,)))
-    # model2.add(Dense(128))
-    print(model2.layers)
-    print(model2.get_layer(index=0))
-    # model2.inputs = model1.output
-    # model2.build((None, 784))
-    # print(model2.call(Input((784, ))))
-    # print(model2.inputs)
-    # print(model2.outputs)
-    print(json.dumps(model2.get_config(), indent=4))
-    # print(model1.outputs)
-    # print(model2.outputs)
-    # after = Model(inputs=model1.outputs, outputs=model2.outputs)
-    # model = Model(inputs=input1, outputs=after.outputs)
-    # model.summary()
-
-    # model3
-    # model3 = Model(inputs=model1.inputs, outputs=model2.outputs)
-    # print(json.dumps(model3.get_config(), indent=4))
+    with tf.Session() as sess:
+        K.set_session(sess)
+        model = load_model(save_path)
+        his = model.evaluate(x_test, y_test)
+        print(his)
 
 
 if __name__ == '__main__':
-    # network()
-    # sequence()
-    # optimizer()
-    # classes()
-    merge()
+    model = build_model()
+    train_model(model)
+    # evaluate_model()

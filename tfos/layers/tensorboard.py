@@ -26,6 +26,7 @@ class TensorBoardLayer(BaseLayer):
     def add(self, operator):
         out = None
         if operator == 'start':
+            self.stop()
             self.start()
             out = self._add_or_create_column('url', '{}:6006'.format(self.get_ip()))
         elif operator == 'stop':

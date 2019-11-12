@@ -14,8 +14,8 @@ long_description = f.read().strip()
 f.close()
 
 install_requires = [
-    'tensorflow',
-    'tensorflowonspark'
+    # 'tensorflow',
+    # 'tensorflowonspark'
 ]
 # dependency_links = []
 # tests_require = []
