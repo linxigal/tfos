@@ -11,11 +11,11 @@ from tensorflowonspark import TFCluster
 
 from tfos.base import ext_exception
 from tfos.base.gfile import ModelDir
-from .worker import TrainWorker, EvaluateWorker, PredictWorker
+from .worker import TrainWorker, EvaluateWorker, PredictWorker, RecurrentPredictWorker
 
 
 class TFOS(object):
-    def __init__(self, sc, sqlc, cluster_size, num_ps, input_mode=TFCluster.InputMode.SPARK):
+    def __init__(self, sc, sqlc, cluster_size=2, num_ps=1, input_mode=TFCluster.InputMode.SPARK):
         self.sc = sc
         self.sqlc = sqlc
         self.cluster_size = cluster_size
@@ -85,3 +85,18 @@ class TFOS(object):
         results = md.read_result()
         if results:
             return self.sqlc.createDataFrame(results)
+
+    @ext_exception('recurrent predict model')
+    def recurrent_predict(self, data_rdd, units, steps, model_dir):
+        md = ModelDir(model_dir, 'recurrent_predict*')
+        worker = RecurrentPredictWorker(units=units,
+                                        steps=steps,
+                                        **md.to_dict())
+        md.delete_result_file()
+        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
+                                input_mode=self.input_mode)
+        cluster.train(data_rdd.rdd, num_epochs=1)
+        cluster.shutdown()
+        results = md.read_result(True)
+        if results:
+            return self.sqlc.createDataFrame([{"result": result} for result in results])

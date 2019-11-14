@@ -64,18 +64,20 @@ class ModelDir(object):
             if tf.gfile.Exists(file):
                 tf.gfile.Remove(file)
 
-    def read_result(self):
+    def read_result(self, is_str=False):
         results = []
         pattern_path = os.path.join(self.result_dir, self.result_pattern)
         for path in tf.gfile.Glob(pattern_path):
             with tf.gfile.FastGFile(path, 'r') as f:
                 for line in f:
-                    results.append(json.loads(line))
+                    if is_str:
+                        results.append(line)
+                    else:
+                        results.append(json.loads(line))
         return results
 
     @staticmethod
     def write_result(path, results, go_on=False):
-
         if go_on and tf.gfile.Exists(path):
             with tf.gfile.FastGFile(path, 'a') as f:
                 ModelDir.write_text(f, results)
@@ -87,6 +89,15 @@ class ModelDir(object):
     def write_text(f, results):
         for result in results:
             f.write(json.dumps(result, sort_keys=True, cls=CustomEncoder) + '\n')
+
+    @staticmethod
+    def write_str(path, result, go_on=False):
+        if go_on and tf.gfile.Exists(path):
+            with tf.gfile.FastGFile(path, 'a') as f:
+                f.write(result)
+        else:
+            with tf.gfile.FastGFile(path, 'w') as f:
+                f.write(result)
 
     def to_dict(self):
         return {
