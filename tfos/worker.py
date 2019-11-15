@@ -16,7 +16,7 @@ from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
 from tensorflowonspark import TFNode
 
-from tfos.base import ModelType, gmt
+from tfos.base import ModelType, gmt, logger
 from tfos.base.gfile import ModelDir
 
 
@@ -222,4 +222,32 @@ class PredictWorker(Worker):
             his = self.model.predict_generator(self.generate_rdd_data(),
                                                steps=self.steps_per_epoch)
             ModelDir.write_result(result_file, self.get_results(his))
+            self.tf_feed.terminate()
+
+
+class RecurrentPredictWorker(Worker):
+    """循环预测"""
+
+    def __init__(self, units, steps, *args, **kwargs):
+        super(RecurrentPredictWorker, self).__init__(*args, **kwargs)
+        self.units = units
+        self.steps = steps
+
+    def execute(self):
+        result_file = os.path.join(self.result_dir, "recurrent_predict_result_{}.txt".format(self.task_index))
+        with tf.Session(self.server.target) as sess:
+            K.set_session(sess)
+            self.load_model()
+            for x, y in self.generate_rdd_data():
+                x_len = x.shape[1]
+                if x_len < self.units:
+                    break
+                x_train = x[:self.units]
+                for _ in range(self.steps):
+                    ys = self.model.predict(x_train, batch_size=1)
+                    y_label = np.argmax(ys).tolist()
+                    x_train = np.array([x_train.tolist()[0][1:] + [y_label]])
+                    ModelDir.write_str(result_file, str(y_label) + " ", True)
+                ModelDir.write_str(result_file, "\n", True)
+
             self.tf_feed.terminate()
