@@ -35,7 +35,7 @@ def makedirs(path):
         #     if 'hdfs' in path:
         # HDFSClient().makedirs(path)
         # else:
-        tf.gfile.MakeDirs(path)
+        tf.io.gfile.makedirs(path)
 
 
 class TestHDFSOP(unittest.TestCase):

@@ -44,8 +44,14 @@ class Worker(object):
         self.server = None
         self.model = None
         self.labels = []
-        self.tmp_dir = "/tmp"
+        self.tmp_dir = "/tmp/tfos"
         self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name + '_checkpoint_{epoch}')
+        self.create_tmp_dir()
+
+    def create_tmp_dir(self):
+        if tf.io.gfile.exists(self.tmp_dir):
+            tf.io.gfile.rmtree(self.tmp_dir)
+        tf.io.gfile.mkdir(self.tmp_dir)
 
     @property
     def model_name(self, suffix='.h5'):
@@ -83,10 +89,11 @@ class Worker(object):
     def save_model(self):
         if self.task_index == 0:
             self.model.save(self.model_tmp_path)
-            tf.gfile.Copy(self.model_tmp_path, self.model_save_path, True)
+            tf.io.gfile.copy(self.model_tmp_path, self.model_save_path, True)
+            tf.io.gfile.rmtree(self.tmp_dir)
 
     def load_model(self):
-        tf.gfile.Copy(self.model_save_path, self.model_tmp_path, True)
+        tf.io.gfile.copy(self.model_save_path, self.model_tmp_path, True)
         K.set_learning_phase(False)
         self.model = load_model(self.model_tmp_path)
 

@@ -34,12 +34,13 @@ class LeakyReLU(Base):
         self.p('alpha', alpha)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import LeakyReLULayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        alpha = params.get('alpha', '0.3')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        alpha = param.get('alpha', '0.3')
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = LeakyReLULayer(model_rdd, sc, sqlc).add(float(alpha))
@@ -58,7 +59,7 @@ class PReLU(Base):
     输出尺寸
         与输入相同。
 
-    参数
+    参数:
         alpha_initializer: 权重初始化
             权重的初始化函数。
         alpha_regularizer: 权重正则化
@@ -75,12 +76,13 @@ class PReLU(Base):
         self.p('alpha_initializer', alpha_initializer)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import PReLULayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        alpha_initializer = params.get('alpha_initializer', 'zeros')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        alpha_initializer = param.get('alpha_initializer', 'zeros')
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = PReLULayer(model_rdd, sc, sqlc).add(alpha_initializer)
@@ -99,7 +101,7 @@ class ELU(Base):
     输出尺寸
         与输入相同。
 
-    参数
+    参数:
         alpha: 因子
             负因子的尺度。
     """
@@ -109,12 +111,13 @@ class ELU(Base):
         self.p('alpha', alpha)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import ELULayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        alpha = params.get('alpha', '1.0')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        alpha = param.get('alpha', '1.0')
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = ELULayer(model_rdd, sc, sqlc).add(float(alpha))
@@ -133,7 +136,7 @@ class ThresholdedReLU(Base):
     输出尺寸
         与输入相同。
 
-    参数
+    参数:
         theta: 阈值
             float >= 0。激活的阈值位。
     """
@@ -143,12 +146,13 @@ class ThresholdedReLU(Base):
         self.p('theta', theta)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import ThresholdedReLULayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        theta = params.get('theta', '1.0')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        theta = param.get('theta', '1.0')
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = ThresholdedReLULayer(model_rdd, sc, sqlc).add(float(theta))
@@ -165,7 +169,7 @@ class Softmax(Base):
     输出尺寸
         与输入相同。
 
-    参数
+    参数:
         axis: 标准化轴
             整数，应用 softmax 标准化的轴。
     """
@@ -175,12 +179,13 @@ class Softmax(Base):
         self.p('axis', axis)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import SoftmaxLayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        axis = params.get('axis', '-1')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        axis = param.get('axis', '-1')
 
         model_rdd = inputRDD(input_prev_layers)
         output_df = SoftmaxLayer(model_rdd, sc, sqlc).add(int(axis))
@@ -204,7 +209,7 @@ class ReLU(Base):
     输出尺寸
         与输入相同。
 
-    参数
+    参数:
         max_value: 最大值
             浮点数，最大的输出值。
         negative_slope: 斜率系数
@@ -220,14 +225,15 @@ class ReLU(Base):
         self.p('threshold', threshold)
 
     def run(self):
-        params = self.params
+        param = self.params
 
         from tfos.layers import ReLULayer
 
-        input_prev_layers = params.get('input_prev_layers')
-        max_value = params.get('max_value', '')
-        negative_slope = params.get('negative_slope', '0')
-        threshold = params.get('threshold', '0')
+        # param = json.loads('<#zzjzParam#>')
+        input_prev_layers = param.get('input_prev_layers')
+        max_value = param.get('max_value', '')
+        negative_slope = param.get('negative_slope', '0')
+        threshold = param.get('threshold', '0')
 
         if not max_value:
             max_value = None

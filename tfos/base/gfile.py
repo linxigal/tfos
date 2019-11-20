@@ -45,13 +45,13 @@ class ModelDir(object):
 
     def create_model_dir(self):
         for path in self.dirs:
-            if not tf.gfile.Exists(path):
-                tf.gfile.MkDir(path)
+            if not tf.io.gfile.exists(path):
+                tf.io.gfile.mkdir(path)
 
     def delete_model_dir(self):
         for path in self.dirs:
-            if tf.gfile.Exists(path):
-                tf.gfile.DeleteRecursively(path)
+            if tf.io.gfile.exists(path):
+                tf.io.gfile.rmtree(path)
 
     def rebuild_model_dir(self):
         self.delete_model_dir()
@@ -60,15 +60,15 @@ class ModelDir(object):
 
     def delete_result_file(self):
         pattern_path = os.path.join(self.result_dir, self.result_pattern)
-        for file in tf.gfile.Glob(pattern_path):
-            if tf.gfile.Exists(file):
-                tf.gfile.Remove(file)
+        for file in tf.io.gfile.glob(pattern_path):
+            if tf.io.gfile.exists(file):
+                tf.io.gfile.remove(file)
 
     def read_result(self, is_str=False):
         results = []
         pattern_path = os.path.join(self.result_dir, self.result_pattern)
-        for path in tf.gfile.Glob(pattern_path):
-            with tf.gfile.FastGFile(path, 'r') as f:
+        for path in tf.io.gfile.glob(pattern_path):
+            with tf.io.gfile.GFile(path, 'r') as f:
                 for line in f:
                     if is_str:
                         results.append(line)
@@ -78,11 +78,11 @@ class ModelDir(object):
 
     @staticmethod
     def write_result(path, results, go_on=False):
-        if go_on and tf.gfile.Exists(path):
-            with tf.gfile.FastGFile(path, 'a') as f:
+        if go_on and tf.io.gfile.exists(path):
+            with tf.io.gfile.GFile(path, 'a') as f:
                 ModelDir.write_text(f, results)
         else:
-            with tf.gfile.FastGFile(path, 'w') as f:
+            with tf.io.gfile.GFile(path, 'w') as f:
                 ModelDir.write_text(f, results)
 
     @staticmethod
@@ -92,11 +92,11 @@ class ModelDir(object):
 
     @staticmethod
     def write_str(path, result, go_on=False):
-        if go_on and tf.gfile.Exists(path):
-            with tf.gfile.FastGFile(path, 'a') as f:
+        if go_on and tf.io.gfile.exists(path):
+            with tf.io.gfile.GFile(path, 'a') as f:
                 f.write(result)
         else:
-            with tf.gfile.FastGFile(path, 'w') as f:
+            with tf.io.gfile.GFile(path, 'w') as f:
                 f.write(result)
 
     def to_dict(self):
