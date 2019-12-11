@@ -52,11 +52,17 @@ class SGD(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if momentum:
-            kwargs['momentum'] = float(momentum)
+            momentum = float(momentum)
+            assert momentum >= 0, "加速度必须大于等于0"
+            kwargs['momentum'] = momentum
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
         if nesterov:
             kwargs['nesterov'] = convert_bool(nesterov)
 
@@ -101,13 +107,21 @@ class RMSprop(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if rho:
-            kwargs['rho'] = float(rho)
+            rho = float(rho)
+            assert rho >= 0, "梯度移动衰减率必须大于等于0"
+            kwargs['rho'] = rho
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
 
         output_df = RMSpropLayer(sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_RMSprop', output_df)
@@ -146,11 +160,17 @@ class Adagrad(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
 
         output_df = AdagradLayer(sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Adagrad', output_df)
@@ -195,13 +215,21 @@ class Adadelta(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if rho:
-            kwargs['rho'] = float(rho)
+            rho = float(rho)
+            assert rho >= 0, "梯度移动衰减率必须大于等于0"
+            kwargs['rho'] = rho
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
 
         output_df = AdadeltaLayer(sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Adadelta', output_df)
@@ -252,15 +280,25 @@ class Adam(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if beta_1:
-            kwargs['beta_1'] = float(beta_1)
+            beta_1 = float(beta_1)
+            assert 0 < beta_1 < 1, "beta_1必须大于0小于1"
+            kwargs['beta_1'] = beta_1
         if beta_2:
-            kwargs['beta_2'] = float(beta_2)
+            beta_2 = float(beta_2)
+            assert 0 < beta_2 < 1, "beta_2必须大于0小于1"
+            kwargs['beta_2'] = beta_2
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
         if amsgrad:
             kwargs['amsgrad'] = convert_bool(amsgrad)
 
@@ -309,15 +347,25 @@ class Adamax(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if beta_1:
-            kwargs['beta_1'] = float(beta_1)
+            beta_1 = float(beta_1)
+            assert 0 < beta_1 < 1, "beta_1必须大于0小于1"
+            kwargs['beta_1'] = beta_1
         if beta_2:
-            kwargs['beta_2'] = float(beta_2)
+            beta_2 = float(beta_2)
+            assert 0 < beta_2 < 1, "beta_2必须大于0小于1"
+            kwargs['beta_2'] = beta_2
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if decay:
-            kwargs['decay'] = float(decay)
+            decay = float(decay)
+            assert decay >= 0, "习率衰减值必须大于等于0"
+            kwargs['decay'] = decay
 
         output_df = AdamaxLayer(sqlc=sqlc).add(**kwargs)
         outputRDD('<#zzjzRddName#>_Adamax', output_df)
@@ -363,13 +411,21 @@ class Nadam(Base):
 
         kwargs = {}
         if lr:
-            kwargs['lr'] = float(lr)
+            lr = float(lr)
+            assert lr >= 0, "学习率必须大于等于零"
+            kwargs['lr'] = lr
         if beta_1:
-            kwargs['beta_1'] = float(beta_1)
+            beta_1 = float(beta_1)
+            assert 0 < beta_1 < 1, "beta_1必须大于0小于1"
+            kwargs['beta_1'] = beta_1
         if beta_2:
-            kwargs['beta_2'] = float(beta_2)
+            beta_2 = float(beta_2)
+            assert 0 < beta_2 < 1, "beta_2必须大于0小于1"
+            kwargs['beta_2'] = beta_2
         if epsilon:
-            kwargs['epsilon'] = float(epsilon)
+            epsilon = float(epsilon)
+            assert epsilon >= 0, "模糊因子必须大于等于0"
+            kwargs['epsilon'] = epsilon
         if schedule_decay:
             kwargs['schedule_decay'] = float(schedule_decay)
 

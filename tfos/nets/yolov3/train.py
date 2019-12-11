@@ -88,6 +88,7 @@ class YOLOV3Worker(Worker, YOLOV3Method):
         self.model_config = json.loads(model_rdd.first().model_config)
         self.class_names = self.get_classes(classes_path)
         self.num_classes = len(self.class_names)
+        # self.anchors = self.get_anchors(anchors_path)[:6]
         self.anchors = self.get_anchors(anchors_path)
         self.weights_path = weights_path
         self.go_on = go_on
@@ -102,7 +103,8 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             batches = self.tf_feed.next_batch(self.batch_size)
             image_data = []
             box_data = []
-            if not batches:
+            if not batches or len(batches) < self.batch_size:
+                # if not batches:
                 raise StopIteration()
             for row in batches:
                 image, box = get_random_data(self.copy_image(row.split()[0]), self.image_size, random=True)
@@ -111,7 +113,7 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             image_data = np.array(image_data)
             box_data = np.array(box_data)
             y_true = preprocess_true_boxes(box_data, self.image_size, self.anchors, self.num_classes)
-            logger.debug(len(batches))
+            # logger.debug(len(batches))
             yield [image_data] + y_true, np.zeros(len(batches))
 
     def load_weights(self):
@@ -133,10 +135,10 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             val_data = val_file.readlines()
             self.val_num = len(val_data)
             return val_data
-
-    def val_generate_data(self, val_data):
-        return self.data_generator_wrapper(val_data, self.batch_size, self.image_size,
-                                           self.anchors, self.num_classes)
+    #
+    # def val_generate_data(self, val_data):
+    #     return self.data_generator_wrapper(val_data, self.batch_size, self.image_size,
+    #                                        self.anchors, self.num_classes)
 
     def get_results(self, his):
         results = []
@@ -165,27 +167,27 @@ class YOLOV3Worker(Worker, YOLOV3Method):
                 self.restore_model()
             tb_callback = TensorBoard(log_dir=self.log_dir, write_grads=True, write_images=True)
             ckpt_callback = ModelCheckpoint(self.checkpoint_file,
-                                            monitor='val_loss',
+                                            monitor='loss',
                                             save_weights_only=True)
-            reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
-            early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
+            reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=3, verbose=1)
+            early_stopping = EarlyStopping(monitor='loss', min_delta=0, patience=10, verbose=1)
 
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else []
-            val_data = self.read_val_set()
+            # callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else []
+            # val_data = self.read_val_set()
+            callbacks = []
 
             self.model.compile(optimizer=Adam(lr=1e-4),
                                loss={'yolo_loss': lambda y_true, y_pred: y_pred})
             # print('Unfreeze all of the layers.')
             callbacks.extend([reduce_lr, early_stopping])
             # note that more GPU memory is required after unfreezing the body
-            logger.debug(self.steps_per_epoch)
             try:
                 logger.debug('start')
                 his = self.model.fit_generator(self.generate_rdd_data(),
                                                steps_per_epoch=self.steps_per_epoch,
-                                               validation_data=self.val_generate_data(val_data),
-                                               validation_steps=max(1, self.val_num // self.batch_size),
+                                               # validation_data=self.val_generate_data(val_data),
+                                               # validation_steps=max(1, self.val_num // self.batch_size),
                                                epochs=self.epochs + self.initial_epoch,
                                                initial_epoch=self.initial_epoch,
                                                workers=1,
@@ -211,10 +213,12 @@ class YOLOV3ModelTrainWorker(YOLOV3Worker):
             y_true = [Input(shape=(h // {0: 32, 1: 16, 2: 8}[l], w // {0: 32, 1: 16, 2: 8}[l],
                                    num_anchors // 3, self.num_classes + 5), name='tmp_{}'.format(l)) for l in range(3)]
             model = Model.from_config(self.model_config)
-            model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
+            # model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
+            model_loss = Lambda(yolo_loss, output_shape=(), name='yolo_loss',
                                 arguments={'anchors': self.anchors,
                                            'num_classes': self.num_classes,
-                                           'ignore_thresh': 0.5})(model.output + y_true)
+                                           'ignore_thresh': 0.2})(model.output + y_true)
+                                           # 'ignore_thresh': 0.5})(model.output + y_true)
             self.model = Model([model.input] + y_true, model_loss)
 
 
@@ -227,11 +231,14 @@ class YOLOV3TinyModelTrainWorker(YOLOV3Worker):
             h, w = self.image_size
             num_anchors = len(self.anchors)
             y_true = [Input(shape=(h // {0: 32, 1: 16}[l], w // {0: 32, 1: 16}[l],
-                                   num_anchors // 2, self.num_classes + 5)) for l in range(2)]
+                                   num_anchors // 2, self.num_classes + 5), name='tmp_{}'.format(l)) for l in range(2)]
             model = Model.from_config(self.model_config)
-            model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-                                arguments={'anchors': self.anchors, 'num_classes': self.num_classes,
-                                           'ignore_thresh': 0.7})(model.output + y_true)
+            # model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
+            model_loss = Lambda(yolo_loss, output_shape=(), name='yolo_loss',
+                                arguments={'anchors': self.anchors,
+                                           'num_classes': self.num_classes,
+                                           'ignore_thresh': 0.3})(model.output + y_true)
+                                           # 'ignore_thresh': 0.7})(model.output + y_true)
             model = Model([model.input] + y_true, model_loss)
             self.model = model
 

@@ -134,11 +134,12 @@ class TFOS(object):
         cluster.train(data_rdd, num_epochs=epochs)
         cluster.shutdown()
         results = md.read_result()
-        return self.sqlc.createDataFrame(results)
+        if results:
+            return self.sqlc.createDataFrame(results)
 
     @ext_exception('yolov3 tiny train model')
-    def yolov3_tiny_train(self, model_rdd, batch_size, epochs, classes_path, anchors_path, weights_path,
-                          train_path, val_path, image_size, model_dir, freeze_body=2, go_on=False):
+    def yolov3_tiny_train(self, model_rdd, batch_size, epochs, classes_path, anchors_path, train_path,
+                          val_path, image_size, model_dir, weights_path=None, freeze_body=2, go_on=False):
         columns = model_rdd.columns
         assert "model_config" in columns, "not exists model layer config!"
         assert tf.io.gfile.exists(train_path), "train dataset path not exists!"

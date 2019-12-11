@@ -67,7 +67,7 @@ class TestYOLOV3(unittest.TestCase):
         YOLOV3Model('9', '20').run()
         SummaryLayer().run()
 
-    @unittest.skip('')
+    # @unittest.skip('')
     def test_yolov3_tiny_model(self):
         YOLOV3TinyModel('9', '20').run()
         SummaryLayer().run()

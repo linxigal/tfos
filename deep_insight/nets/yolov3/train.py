@@ -87,7 +87,7 @@ class YOLOV3ModelTrain(Base):
 class YOLOV3TinyModelTrain(Base):
 
     def __init__(self, cluster_size, num_ps, batch_size, epochs, classes_path, anchors_path, train_path, val_path,
-                 weights_path, image_size, model_dir, freeze_body=2, go_on='false', **kwargs):
+                 image_size, model_dir, weights_path=None, freeze_body=2, go_on='false', **kwargs):
         super(YOLOV3TinyModelTrain, self).__init__()
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
@@ -136,7 +136,8 @@ class YOLOV3TinyModelTrain(Base):
         kwargs['epochs'] = int(epochs)
         kwargs['classes_path'] = classes_path
         kwargs['anchors_path'] = anchors_path
-        kwargs['weights_path'] = weights_path
+        if weights_path:
+            kwargs['weights_path'] = weights_path.strip()
         kwargs['train_path'] = train_path
         kwargs['val_path'] = val_path
         kwargs['image_size'] = tuple(int(x) for x in image_size.split(','))
@@ -171,9 +172,9 @@ class TestYOLOV3Train(unittest.TestCase):
     # @unittest.skip('')
     def test_yolov3_model_train(self):
         YOLOV3Model('9', '20').run()
-        YOLOV3ModelTrain(cluster_size='3',
+        YOLOV3ModelTrain(cluster_size='2',
                          num_ps='1',
-                         batch_size='32',
+                         batch_size='9',
                          epochs='1',
                          classes_path=self.classes_path,
                          anchors_path=self.anchors_path,
@@ -187,13 +188,13 @@ class TestYOLOV3Train(unittest.TestCase):
     @unittest.skip('')
     def test_yoloV3_tiny_model_train(self):
         YOLOV3TinyModel('9', '20').run()
-        YOLOV3TinyModelTrain(cluster_size='3',
+        YOLOV3TinyModelTrain(cluster_size='2',
                              num_ps='1',
-                             batch_size='32',
+                             batch_size='11',
                              epochs='1',
                              classes_path=self.classes_path,
                              anchors_path=self.anchors_path,
-                             weights_path=self.weights_path,
+                             # weights_path=self.weights_path,
                              train_path=self.train_path,
                              val_path=self.val_path,
                              image_size='416,416',
