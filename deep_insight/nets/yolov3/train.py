@@ -80,7 +80,7 @@ class YOLOV3ModelTrain(Base):
         kwargs['go_on'] = convert_bool(go_on)
 
         output_df = TFOS(sc, sqlc, cluster_size, num_ps).yolov3_train(**kwargs)
-        output_df.show()
+        # output_df.show()
         outputRDD('<#zzjzRddName#>_yolov3', output_df)
 
 
@@ -174,7 +174,7 @@ class TestYOLOV3Train(unittest.TestCase):
         YOLOV3Model('9', '20').run()
         YOLOV3ModelTrain(cluster_size='2',
                          num_ps='1',
-                         batch_size='9',
+                         batch_size='2',
                          epochs='1',
                          classes_path=self.classes_path,
                          anchors_path=self.anchors_path,
@@ -187,10 +187,10 @@ class TestYOLOV3Train(unittest.TestCase):
 
     @unittest.skip('')
     def test_yoloV3_tiny_model_train(self):
-        YOLOV3TinyModel('9', '20').run()
+        YOLOV3TinyModel('6', '20').run()
         YOLOV3TinyModelTrain(cluster_size='2',
                              num_ps='1',
-                             batch_size='11',
+                             batch_size='1',
                              epochs='1',
                              classes_path=self.classes_path,
                              anchors_path=self.anchors_path,

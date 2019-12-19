@@ -113,7 +113,6 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             image_data = np.array(image_data)
             box_data = np.array(box_data)
             y_true = preprocess_true_boxes(box_data, self.image_size, self.anchors, self.num_classes)
-            # logger.debug(len(batches))
             yield [image_data] + y_true, np.zeros(len(batches))
 
     def load_weights(self):
@@ -135,10 +134,10 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             val_data = val_file.readlines()
             self.val_num = len(val_data)
             return val_data
-    #
-    # def val_generate_data(self, val_data):
-    #     return self.data_generator_wrapper(val_data, self.batch_size, self.image_size,
-    #                                        self.anchors, self.num_classes)
+
+    def val_generate_data(self, val_data):
+        return self.data_generator_wrapper(val_data, self.batch_size, self.image_size,
+                                           self.anchors, self.num_classes)
 
     def get_results(self, his):
         results = []
@@ -153,16 +152,17 @@ class YOLOV3Worker(Worker, YOLOV3Method):
     def restore_model(self):
         ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
-            K.set_learning_phase(False)
+            # K.set_learning_phase(False)
             self.initial_epoch = int(ckpt.model_checkpoint_path.split('_')[-1])
             self.model.load_weights(ckpt.model_checkpoint_path)
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
-        config = tf.ConfigProto(allow_soft_placement=True)
+        config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
         config.gpu_options.allow_growth = True
-        with tf.Session(self.server.target, config=config) as sess:
-            K.set_session(sess)
+        with tf.compat.v1.Session(self.server.target, config=config) as sess:
+            # K.set_session(sess)
+            # K.set_learning_phase(False)
             if self.go_on:
                 self.restore_model()
             tb_callback = TensorBoard(log_dir=self.log_dir, write_grads=True, write_images=True)
@@ -173,17 +173,14 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             early_stopping = EarlyStopping(monitor='loss', min_delta=0, patience=10, verbose=1)
 
             # add callbacks to save model checkpoint and tensorboard events (on worker:0 only)
-            # callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else []
-            # val_data = self.read_val_set()
-            callbacks = []
+            callbacks = [tb_callback, ckpt_callback] if self.task_index == 0 else []
 
             self.model.compile(optimizer=Adam(lr=1e-4),
                                loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-            # print('Unfreeze all of the layers.')
             callbacks.extend([reduce_lr, early_stopping])
-            # note that more GPU memory is required after unfreezing the body
             try:
                 logger.debug('start')
+                # val_data = self.read_val_set()
                 his = self.model.fit_generator(self.generate_rdd_data(),
                                                steps_per_epoch=self.steps_per_epoch,
                                                # validation_data=self.val_generate_data(val_data),
@@ -192,13 +189,14 @@ class YOLOV3Worker(Worker, YOLOV3Method):
                                                initial_epoch=self.initial_epoch,
                                                workers=1,
                                                callbacks=callbacks)
-                logger.debug(str(his.history))
+                logger.debug(his.history)
             except Exception as e:
                 logger.debug(str(e))
             logger.debug('end')
             self.save_model()
             ModelDir.write_result(result_file, self.get_results(his), self.go_on)
             self.tf_feed.terminate()
+        # K.clear_session()
 
 
 class YOLOV3ModelTrainWorker(YOLOV3Worker):
@@ -213,12 +211,10 @@ class YOLOV3ModelTrainWorker(YOLOV3Worker):
             y_true = [Input(shape=(h // {0: 32, 1: 16, 2: 8}[l], w // {0: 32, 1: 16, 2: 8}[l],
                                    num_anchors // 3, self.num_classes + 5), name='tmp_{}'.format(l)) for l in range(3)]
             model = Model.from_config(self.model_config)
-            # model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-            model_loss = Lambda(yolo_loss, output_shape=(), name='yolo_loss',
+            model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
                                 arguments={'anchors': self.anchors,
                                            'num_classes': self.num_classes,
-                                           'ignore_thresh': 0.2})(model.output + y_true)
-                                           # 'ignore_thresh': 0.5})(model.output + y_true)
+                                           'ignore_thresh': 0.5})(model.output + y_true)
             self.model = Model([model.input] + y_true, model_loss)
 
 

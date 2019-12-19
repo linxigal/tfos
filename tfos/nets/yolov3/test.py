@@ -117,9 +117,9 @@ class TestYOLOV3ModelTrain(object):
         model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
                             arguments={'anchors': self.anchors,
                                        'num_classes': self.num_classes,
-                                       'ignore_thresh': 0.5},
-                            trainable=False)(model.output + y_true)
-        model = Model([model.input] + y_true, model_loss, trainable=False)
+                                       'ignore_thresh': 0.5})(model.output + y_true)
+        model = Model([model.input] + y_true, model_loss)
+        model.summary()
         self.model = model
 
     @property
@@ -145,7 +145,7 @@ class TestYOLOV3ModelTrain(object):
     def restore_model(self, checkpoint_dir):
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
-            K.set_learning_phase(False)
+            # K.set_learning_phase(True)
             self.initial_epoch = int(ckpt.model_checkpoint_path.split('_')[-1])
             self.model.load_weights(ckpt.model_checkpoint_path)
 
@@ -155,13 +155,13 @@ class TestYOLOV3ModelTrain(object):
         config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
         config.gpu_options.allow_growth = True
         with tf.compat.v1.Session(config=config) as sess:
-            K.set_session(sess)
+            # K.set_session(sess)
             if self.go_on:
                 self.restore_model(checkpoint_dir)
             tb_callback = TensorBoard(log_dir=log_dir, write_images=True)
             checkpoint_file = os.path.join(checkpoint_dir, self.name + '_checkpoint_{epoch}')
             ckpt_callback = ModelCheckpoint(checkpoint_file,
-                                            monitor='loss',
+                                            # monitor='loss',
                                             save_weights_only=True)
             reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=3, verbose=1)
             early_stopping = EarlyStopping(monitor='loss', min_delta=0, patience=10, verbose=1)
@@ -188,10 +188,11 @@ class TestYOLOV3ModelTrain(object):
             logger.debug(str(his.history))
             # except Exception as e:
             #     logger.debug(str(e))
-            logger.debug('end')
+            # logger.debug('end')
             save_model_path = os.path.join(save_dir, 'model.h5')
             self.model.save(save_model_path)
             ModelDir.write_result(result_file, self.get_results(his))
+        # K.clear_session()
 
     def main(self):
         md = ModelDir(self.model_dir, 'train*')

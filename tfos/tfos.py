@@ -10,7 +10,7 @@ import math
 import tensorflow as tf
 from tensorflowonspark import TFCluster
 
-from tfos.base import ext_exception
+from tfos.base import ext_exception, logger
 from tfos.base.gfile import ModelDir
 from .nets.yolov3.train import YOLOV3ModelTrainWorker, YOLOV3TinyModelTrainWorker
 from .worker import TrainWorker, EvaluateWorker, PredictWorker, RecurrentPredictWorker
@@ -53,7 +53,7 @@ class TFOS(object):
                              **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=epochs)
+        cluster.train(data_rdd.rdd, num_epochs=epochs, feed_timeout=60000)
         cluster.shutdown()
         results = md.read_result()
         return self.sqlc.createDataFrame(results)
@@ -83,7 +83,7 @@ class TFOS(object):
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=1)
+        cluster.train(data_rdd.rdd, num_epochs=1, feed_timeout=6000)
         cluster.shutdown()
         results = md.read_result()
         return self.sqlc.createDataFrame(results)
@@ -97,7 +97,7 @@ class TFOS(object):
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
-        cluster.train(data_rdd.rdd, num_epochs=1)
+        cluster.train(data_rdd.rdd, num_epochs=1, feed_timeout=6000)
         cluster.shutdown()
         results = md.read_result(True)
         return self.sqlc.createDataFrame([{"result": result} for result in results])
@@ -110,7 +110,6 @@ class TFOS(object):
         assert tf.io.gfile.exists(train_path), "train dataset path not exists!"
         data_rdd = self.sc.textFile(train_path)
         n_samples = data_rdd.count()
-        print(n_samples)
         steps_per_epoch = math.ceil(n_samples / batch_size / self.num_workers)
         md = ModelDir(model_dir, 'train*')
         if go_on:
@@ -131,7 +130,7 @@ class TFOS(object):
                                         **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
-        cluster.train(data_rdd, num_epochs=epochs)
+        cluster.train(data_rdd, num_epochs=epochs, feed_timeout=60000)
         cluster.shutdown()
         results = md.read_result()
         if results:
@@ -165,7 +164,7 @@ class TFOS(object):
                                             **md.to_dict())
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
-        cluster.train(data_rdd, num_epochs=epochs)
+        cluster.train(data_rdd, num_epochs=epochs, feed_timeout=60000)
         cluster.shutdown()
         results = md.read_result()
         return self.sqlc.createDataFrame(results)
