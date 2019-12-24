@@ -31,18 +31,20 @@ class RecurrentPredictModel(Base):
             模型的保存路径
     """
 
-    def __init__(self, cluster_size, num_ps, units, steps, model_dir, **kwargs):
+    def __init__(self, cluster_size, num_ps, units, steps, feature_type, model_dir, **kwargs):
         super(RecurrentPredictModel, self).__init__(**kwargs)
         self.p('cluster_size', cluster_size)
         self.p('num_ps', num_ps)
         self.p('units', units)
         self.p('steps', steps)
+        self.p('feature_type', feature_type)
         self.p('model_dir', [{"path": model_dir}])
 
     def run(self):
         param = self.params
 
         from tfos import TFOS
+        from tfos.choices import FEATURE_TYPE
 
         # param = json.loads('<#zzjzParam#>')
         input_rdd_name = param.get('input_rdd_name')
@@ -50,6 +52,7 @@ class RecurrentPredictModel(Base):
         num_ps = param.get('num_ps', 1)
         units = param.get('units', 0)
         steps = param.get('steps', 0)
+        feature_type = param.get('feature_type', FEATURE_TYPE[0])
         model_dir = param.get('model_dir')[0]['path']
 
         # param check
@@ -62,7 +65,7 @@ class RecurrentPredictModel(Base):
         input_rdd = inputRDD(input_rdd_name)
         assert input_rdd, "cannot get rdd data from previous input layer!"
 
-        output_df = TFOS(sc, sqlc, cluster_size, num_ps).recurrent_predict(input_rdd, units, steps, model_dir)
+        output_df = TFOS(sc, sqlc, cluster_size, num_ps).recurrent_predict(input_rdd, units, steps, feature_type, model_dir)
         if output_df:
             output_df.show()
             outputRDD('<#zzjzRddName#>_recurrent_predict_result', output_df)
