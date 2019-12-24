@@ -87,10 +87,11 @@ class TFOS(object):
             return self.sqlc.createDataFrame(results)
 
     @ext_exception('recurrent predict model')
-    def recurrent_predict(self, data_rdd, units, steps, model_dir):
+    def recurrent_predict(self, data_rdd, units, steps, feature_type, model_dir):
         md = ModelDir(model_dir, 'recurrent_predict*')
         worker = RecurrentPredictWorker(units=units,
                                         steps=steps,
+                                        feature_type=feature_type,
                                         **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
