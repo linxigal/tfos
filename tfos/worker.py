@@ -235,10 +235,11 @@ class PredictWorker(Worker):
 class RecurrentPredictWorker(Worker):
     """循环预测"""
 
-    def __init__(self, units, steps, *args, **kwargs):
+    def __init__(self, units, steps, feature_type, *args, **kwargs):
         super(RecurrentPredictWorker, self).__init__(*args, **kwargs)
         self.units = units
         self.steps = steps
+        self.feature_type = feature_type
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "recurrent_predict_result_{}.txt".format(self.task_index))
@@ -253,7 +254,10 @@ class RecurrentPredictWorker(Worker):
                 for _ in range(self.steps):
                     ys = self.model.predict(x_train, batch_size=1)
                     y_label = np.argmax(ys).tolist()
-                    x_train = np.array([x_train.tolist()[0][1:] + [y_label]])
+                    if self.feature_type == 'one_hot':
+                        x_train = np.array([x_train.tolist()[0][1:] + [ys]])
+                    else:
+                        x_train = np.array([x_train.tolist()[0][1:] + [y_label]])
                     ModelDir.write_str(result_file, str(y_label) + " ", True)
                 ModelDir.write_str(result_file, "\n", True)
 
