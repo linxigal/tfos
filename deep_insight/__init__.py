@@ -14,7 +14,7 @@ from pyspark.sql import SQLContext
 CURRENT_PATH = os.path.dirname(__file__)
 ROOT_PATH = os.path.dirname(CURRENT_PATH)
 GITHUB = os.path.dirname(ROOT_PATH)
-HDFS = 'hdfs://t-master:8020'
+HDFS = 'hdfs://master:8020'
 # OUTPUT_DATA = os.path.join(ROOT_PATH, 'output_data')
 #
 # if not os.path.exists(OUTPUT_DATA):
