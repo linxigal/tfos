@@ -20,7 +20,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.python.keras.layers import Lambda, Input
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.optimizers import Adam
+from tensorflow.python.keras.optimizers import Adam, RMSprop, SGD
 
 from tfos.base.gfile import ModelDir
 from tfos.worker import Worker, logger
@@ -103,8 +103,8 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             batches = self.tf_feed.next_batch(self.batch_size)
             image_data = []
             box_data = []
-            if not batches or len(batches) < self.batch_size:
-                # if not batches:
+            # if not batches or len(batches) < self.batch_size:
+            if not batches:
                 raise StopIteration()
             for row in batches:
                 image, box = get_random_data(self.copy_image(row.split()[0]), self.image_size, random=True)
@@ -113,7 +113,7 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             image_data = np.array(image_data)
             box_data = np.array(box_data)
             y_true = preprocess_true_boxes(box_data, self.image_size, self.anchors, self.num_classes)
-            yield [image_data] + y_true, np.zeros(len(batches))
+            yield [image_data] + y_true, None
 
     def load_weights(self):
         if self.weights_path:
@@ -158,10 +158,10 @@ class YOLOV3Worker(Worker, YOLOV3Method):
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
-        config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
+        config = tf.ConfigProto(allow_soft_placement=True)
         config.gpu_options.allow_growth = True
-        with tf.compat.v1.Session(self.server.target, config=config) as sess:
-            # K.set_session(sess)
+        with tf.Session(self.server.target, config=config) as sess:
+            K.set_session(sess)
             # K.set_learning_phase(False)
             if self.go_on:
                 self.restore_model()
@@ -196,7 +196,7 @@ class YOLOV3Worker(Worker, YOLOV3Method):
             self.save_model()
             ModelDir.write_result(result_file, self.get_results(his), self.go_on)
             self.tf_feed.terminate()
-        # K.clear_session()
+        K.clear_session()
 
 
 class YOLOV3ModelTrainWorker(YOLOV3Worker):

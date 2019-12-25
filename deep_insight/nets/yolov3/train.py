@@ -158,7 +158,7 @@ class TestYOLOV3Train(unittest.TestCase):
         self.classes_path = join(self.path, 'data/data/yolov3/label/voc_classes.txt')
         self.anchors_path = join(self.path, 'data/data/yolov3/label/yolo_anchors.txt')
         self.weights_path = join(self.path, 'data/data/yolov3/label/yolo_weights.h5')
-        self.train_path = join(self.path, 'data/data/yolov3/VOCdevkit/VOC2007/train/test_train.txt')
+        self.train_path = join(self.path, 'data/data/yolov3/VOCdevkit/VOC2007/train/test_val.txt')
         self.val_path = join(self.path, 'data/data/yolov3/VOCdevkit/VOC2007/train/test_val.txt')
         self.model_dir = join(self.path, 'data/model/yolov3')
 
@@ -174,7 +174,7 @@ class TestYOLOV3Train(unittest.TestCase):
         YOLOV3Model('9', '20').run()
         YOLOV3ModelTrain(cluster_size='2',
                          num_ps='1',
-                         batch_size='2',
+                         batch_size='3',
                          epochs='1',
                          classes_path=self.classes_path,
                          anchors_path=self.anchors_path,

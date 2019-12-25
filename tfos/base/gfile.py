@@ -111,7 +111,7 @@ class ModelDir(object):
 class TestModelDir(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.model_dir = "hdfs://t-master:8020/data/model/mnist_mlp"
+        self.model_dir = "hdfs://master:8020/data/model/mnist_mlp"
 
     def test_read_result_file(self):
         md = ModelDir(self.model_dir, 'train*')
