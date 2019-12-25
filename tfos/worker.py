@@ -7,6 +7,7 @@
 
 import json
 import os
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -44,8 +45,17 @@ class Worker(object):
         self.server = None
         self.model = None
         self.labels = []
-        self.tmp_dir = "/tmp"
+        # self.tmp_dir = "/tmp"
+        self.tmp_dir = "/tmp/{}".format(int(time.time() * 1000))
         self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name + '_checkpoint_{epoch}')
+
+    def create_tmp_dir(self):
+        tf.io.gfile.mkdir(self.tmp_dir)
+        # tf.io.gfile.makedirs(self.tmp_dir)
+
+    def delete_tmp_dir(self):
+        if tf.io.gfile.exists(self.tmp_dir):
+            tf.io.gfile.rmtree(self.tmp_dir)
 
     @property
     def model_name(self, suffix='.h5'):
@@ -98,8 +108,10 @@ class Worker(object):
         if ctx.job_name == "ps":
             self.server.join()
         elif ctx.job_name == "worker":
+            self.create_tmp_dir()
             self.build_model()
             self.execute()
+            self.delete_tmp_dir()
 
 
 class TrainWorker(Worker):
@@ -243,15 +255,19 @@ class RecurrentPredictWorker(Worker):
                 x_len = x.shape[1]
                 if x_len < self.units:
                     break
-                x_train = x[:self.units]
+                x_train = np.array(x[:self.units])
                 for _ in range(self.steps):
                     ys = self.model.predict(x_train, batch_size=1)
-                    y_label = np.argmax(ys).tolist()
+                    y_label = np.argmax(ys, 1)
                     if self.feature_type == 'one_hot':
-                        x_train = np.array([x_train.tolist()[0][1:] + [ys]])
+                        shape = ys.shape
+                        y_l = np.zeros(shape)
+                        y_l[..., y_label] = 1
+                        x_train = np.array([x_train.tolist()[0][1:] + y_l.tolist()])
                     else:
-                        x_train = np.array([x_train.tolist()[0][1:] + [y_label]])
-                    ModelDir.write_str(result_file, str(y_label) + " ", True)
+                        x_train = np.array([x_train.tolist()[0][1:] + y_label.tolist()])
+
+                    ModelDir.write_str(result_file, str(y_label.tolist()[0]) + " ", True)
                 ModelDir.write_str(result_file, "\n", True)
 
             self.tf_feed.terminate()

@@ -85,8 +85,8 @@ class TestRecurrentModel(unittest.TestCase):
     def path(self):
         return ROOT_PATH if self.is_local else HDFS
 
-    # @unittest.skip("")
-    def test_predict_model(self):
+    @unittest.skip("")
+    def test_recurrent_predict_model(self):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         RecurrentPredictModel(input_prev_layers=MODEL_BRANCH,
                               input_rdd_name=DATA_BRANCH,
@@ -94,6 +94,19 @@ class TestRecurrentModel(unittest.TestCase):
                               num_ps=1,
                               units=784,
                               steps=10,
+                              feature_type='label_encode',
+                              model_dir=self.model_dir).run()
+
+    # @unittest.skip("")
+    def test_current_predict_model(self):
+        Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
+        RecurrentPredictModel(input_prev_layers=MODEL_BRANCH,
+                              input_rdd_name=DATA_BRANCH,
+                              cluster_size=3,
+                              num_ps=1,
+                              units=784,
+                              steps=10,
+                              feature_type='one_hot',
                               model_dir=self.model_dir).run()
 
 
