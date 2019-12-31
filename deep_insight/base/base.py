@@ -6,7 +6,10 @@
 :File       : base.py
 """
 
+import unittest
 from collections import defaultdict
+
+from deep_insight import *
 
 GLOBAL_RDD = defaultdict(dict)
 BRANCH = -1
@@ -69,3 +72,13 @@ class Base(object):
         return self
 
     b = branch
+
+
+class TestCase(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestCase, self).__init__(*args, **kwargs)
+        self.is_local = True
+
+    @property
+    def path(self):
+        return ROOT_PATH if self.is_local else HDFS

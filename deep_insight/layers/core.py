@@ -32,10 +32,10 @@ class Masking(Base):
         - set `x[:, 3, :] = 0.` and `x[:, 5, :] = 0.`
         - insert a `Masking` layer with `mask_value=0.` before the LSTM layer:
 
-    ``python
-      model = Sequential()
-      model.add(Masking(mask_value=0., input_shape=(timesteps, features)))
-      model.add(LSTM(32))
+    ```python
+        model = Sequential()
+        model.add(Masking(mask_value=0., input_shape=(timesteps, features)))
+        model.add(LSTM(32))
     ```
 
     参数：

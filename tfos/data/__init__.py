@@ -11,9 +11,10 @@ import tensorflow as tf
 
 from .read_data import DataSet
 
-__all__ = ['DataSet', 'BaseData']
+__all__ = ['DataSet', 'BaseData', 'DATA_INDEX', 'MARK_INDEX']
 
-DATAINDEX = ['feature', 'label']
+DATA_INDEX = ['feature', 'label']
+MARK_INDEX = ['name', 'label']
 
 
 class BaseData(object):
@@ -50,7 +51,7 @@ class BaseData(object):
 
     @staticmethod
     def rdd2df(rdd):
-        return rdd.toDF(DATAINDEX)
+        return rdd.toDF(DATA_INDEX)
 
     @staticmethod
     def convert_one_hot(y, num_class):

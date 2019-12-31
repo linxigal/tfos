@@ -7,6 +7,7 @@
 
 from tfos.base.config import *
 
+SPLIT_MODE = ['SPLIT_IMAGES', 'SPLIT_CLASSES']
 BOOLEAN = ['true', 'false']
 PADDING = ['valid', 'same']
 FEATURE_TYPE = ['one_hot', 'label_encode']
