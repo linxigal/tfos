@@ -13,6 +13,8 @@ class FolderClass(Base):
 
     参数：
         data_dir： 数据集目录
+        data_mode: 读取模式
+            读取数据的模式，分为训练数据和测试数据， train|test
         split_ratio： 数据集切分比例
             按照此参数设置的比例，将数据集切分成训练集和测试集
         min_num_per_class： 每个类别最小数据量
@@ -22,9 +24,10 @@ class FolderClass(Base):
 
     """
 
-    def __init__(self, data_dir, split_ratio='0.0', min_num_per_class='1', mode='SPLIT_IMAGES'):
+    def __init__(self, data_dir, data_mode='train', split_ratio='0.0', min_num_per_class='1', mode='SPLIT_IMAGES'):
         super(FolderClass, self).__init__()
         self.p('data_dir', data_dir)
+        self.p('data_mode', data_mode)
         self.p('split_ratio', split_ratio)
         self.p('min_num_per_class', min_num_per_class)
         self.p('mode', mode)
@@ -33,10 +36,11 @@ class FolderClass(Base):
         param = self.params
 
         from tfos.data.folder_class import FolderClass
-        from tfos.choices import SPLIT_MODE
+        from tfos.choices import SPLIT_MODE, DATA_MODE
 
         # param = json.loads('<#zzjzParam#>')
         data_dir = param.get('data_dir')
+        data_mode = param.get('data_mode', DATA_MODE[0])
         split_ratio = param.get('split_ratio', 0.0)
         min_num_per_class = param.get('min_num_per_class', 1)
         mode = param.get('mode', SPLIT_MODE[0])
@@ -53,13 +57,17 @@ class FolderClass(Base):
         if mode:
             kwargs['mode'] = mode
 
-        n_classes, data_rdd, mark_rdd = FolderClass(sc, **kwargs).train_data
+        if data_mode == 'train':
+            n_classes, data_rdd, mark_rdd = FolderClass(sc, **kwargs).train_data
+        else:
+            n_classes, data_rdd, mark_rdd = FolderClass(sc, **kwargs).test_data
         print(n_classes)
         data_rdd.show()
         mark_rdd.show()
-        outputRDD('<#zzjzRddName#>_n_classes', n_classes)
-        outputRDD('<#zzjzRddName#>_data', data_rdd)
-        outputRDD('<#zzjzRddName#>_mark', mark_rdd)
+        output_name = '<#zzjzRddName#>_{}_'.format(data_mode)
+        outputRDD(output_name + 'n_classes', n_classes)
+        outputRDD(output_name + 'data', data_rdd)
+        outputRDD(output_name + 'mark', mark_rdd)
 
 
 class TestFolderClass(TestCase):
