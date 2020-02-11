@@ -62,8 +62,8 @@ class FolderClass(Base):
         else:
             n_classes, data_rdd, mark_rdd = FolderClass(sc, **kwargs).test_data
         print(n_classes)
-        data_rdd.show()
-        mark_rdd.show()
+        data_rdd.show() if data_rdd else print(data_rdd)
+        mark_rdd.show() if mark_rdd else print(mark_rdd)
         output_name = '<#zzjzRddName#>_{}_'.format(data_mode)
         outputRDD(output_name + 'n_classes', n_classes)
         outputRDD(output_name + 'data', data_rdd)
@@ -81,6 +81,9 @@ class TestFolderClass(TestCase):
         FolderClass(self.data_dir).run()
         FolderClass(self.data_dir, split_ratio='0.8').run()
         FolderClass(self.data_dir, split_ratio='0.8', mode='SPLIT_CLASSES').run()
+        FolderClass(self.data_dir, data_mode='test').run()
+        FolderClass(self.data_dir, data_mode='test', split_ratio='0.8').run()
+        FolderClass(self.data_dir, data_mode='test', split_ratio='0.8', mode='SPLIT_CLASSES').run()
 
 
 if __name__ == '__main__':

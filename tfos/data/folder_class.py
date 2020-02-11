@@ -120,6 +120,9 @@ class FolderClass(object):
     def process(self, data_set):
         n_classes = len(data_set)
         image_list, label_list = get_image_paths_and_labels(data_set)
-        data_rdd = self.__sc.parallelize(zip(image_list, label_list)).toDF(DATA_INDEX)
-        mark_rdd = self.__sc.parallelize([(data_set[i].name, i) for i in range(len(data_set))]).toDF(MARK_INDEX)
+        if image_list:
+            data_rdd = self.__sc.parallelize(zip(image_list, label_list)).toDF(DATA_INDEX)
+            mark_rdd = self.__sc.parallelize([(data_set[i].name, i) for i in range(len(data_set))]).toDF(MARK_INDEX)
+        else:
+            data_rdd, mark_rdd = None, None
         return n_classes, data_rdd, mark_rdd
