@@ -21,10 +21,10 @@ from .exception import ext_exception
 from .logger import logger
 
 __all__ = [
-    'get_mode_type', 'gmt', 'BaseLayer',
+    'get_mode_type', 'gmt', 'BaseLayer', 'CustomEncoder',
     'ext_exception', 'logger',
     'valid_activations', 'valid_losses', 'valid_metrics', 'valid_optimizers', 'valid_regularizers',
-    'ModelType', 'ROUND_NUM'
+    'ModelType', 'ROUND_NUM',
 ]
 
 # 保留小数点位数

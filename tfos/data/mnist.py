@@ -111,4 +111,4 @@ class Mnist(BaseData):
         if self.__mode == 'train':
             return self.sc.parallelize(zip(*train_data))
         else:
-            return self.sc.parallelize(zip(*train_data))
+            return self.sc.parallelize(zip(*test_data))

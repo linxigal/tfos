@@ -100,3 +100,7 @@ DROP_DOWN_MENU = {
         ('linear', 'linear'),
     ]
 }
+
+# 图片格式
+
+IMG_FORMAT = ['jpg', 'png', 'gif']

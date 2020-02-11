@@ -78,7 +78,7 @@ class ModelDir(object):
 
     @staticmethod
     def write_result(path, results, go_on=False):
-        if go_on and tf.gfile.Exists(path):
+        if go_on and tf.io.gfile.exists(path):
             with tf.io.gfile.GFile(path, 'a') as f:
                 ModelDir.write_text(f, results)
         else:
