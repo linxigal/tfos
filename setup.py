@@ -15,7 +15,8 @@ f.close()
 
 install_requires = [
     # 'tensorflow',
-    # 'tensorflowonspark'
+    # 'tensorflowonspark',
+    'facenet'
 ]
 # dependency_links = []
 # tests_require = []
