@@ -15,7 +15,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-from tfos.base import ROUND_NUM
+from tfos.base import ROUND_NUM, logger
 
 OUTPUT_FORMAT = ['json', 'csv']
 

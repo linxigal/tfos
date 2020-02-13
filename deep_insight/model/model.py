@@ -206,7 +206,7 @@ class PredictModel(Base):
 class TestModel(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.is_local = False
+        self.is_local = True
         self.mnist_dir = os.path.join(self.path, 'data/data/mnist')
         self.model_dir = os.path.join(self.path, 'data/model/mnist_mlp')
 

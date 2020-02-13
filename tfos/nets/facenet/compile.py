@@ -12,7 +12,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from facenet.src import facenet
 
-from tfos.tf.compile import TFCompile
+from tfos.tf import TFCompile
 
 
 class FaceNetSoftMaxCompile(TFCompile):

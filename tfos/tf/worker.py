@@ -10,15 +10,14 @@
 """
 
 import os
-import time
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+import time
 from tensorflowonspark import TFNode
 
 from tfos.base.gfile import ModelDir
-from tfos.tf.model import import_model, TFMode
+from tfos.tf import TFCompile
 
 
 class TFWorker(object):
@@ -45,8 +44,8 @@ class TFWorker(object):
         self.server = None
         self.model = None
         self.labels = []
-        self.tmp_dir = "/tmp/tfos/tf/{}".format(int(time.time() * 1000))
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name + '_checkpoint_{epoch}')
+        self.tmp_dir = "/tmp/tfos/{}".format(int(time.time() * 1000))
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name)
 
     def create_tmp_dir(self):
         # tf.io.gfile.mkdir(self.tmp_dir)
@@ -61,7 +60,7 @@ class TFWorker(object):
         return tf.train.get_global_step()
 
     @property
-    def model_name(self, suffix='.h5'):
+    def model_name(self, suffix='.ckpt'):
         return self.name + suffix
 
     @property
@@ -72,20 +71,27 @@ class TFWorker(object):
     def model_save_path(self):
         return os.path.join(self.save_dir, self.model_name)
 
+    def common_dict(self, epoch):
+        return {
+            "_task_index": self.task_index,
+            "_epoch": epoch
+        }
+
+    @property
     def generate_rdd_data(self):
         while not self.tf_feed.should_stop():
             batches = self.tf_feed.next_batch(self.batch_size)
             inputs = []
             labels = []
-            if not batches:
-                raise StopIteration()
+            # if not batches:
+            #     raise StopIteration()
             for row in batches:
                 inputs.append(row.feature)
                 labels.append(row.label)
                 self.labels.append(np.argmax(row.label))
             inputs = np.array(inputs).astype('float32')
             labels = np.array(labels).astype('float32')
-            yield inputs, labels
+            return inputs, labels
 
     def build_model(self):
         pass
@@ -93,23 +99,23 @@ class TFWorker(object):
     def execute(self):
         raise NotImplementedError
 
-    def save_model(self):
-        """
-        保存h5文件
-        :return:
-        """
-        if self.task_index == 0:
-            self.model.save(self.model_tmp_path)
-            tf.gfile.Copy(self.model_tmp_path, self.model_save_path, True)
-
-    def load_model(self):
-        """
-        加载h5文件
-        :return:
-        """
-        tf.gfile.Copy(self.model_save_path, self.model_tmp_path, True)
-        K.set_learning_phase(False)
-        # self.model = load_model(self.model_tmp_path)
+    # def save_model(self):
+    #     """
+    #     保存h5文件
+    #     :return:
+    #     """
+    #     if self.task_index == 0:
+    #         self.model.save(self.model_tmp_path)
+    #         tf.gfile.Copy(self.model_tmp_path, self.model_save_path, True)
+    #
+    # def load_model(self):
+    #     """
+    #     加载h5文件
+    #     :return:
+    #     """
+    #     tf.gfile.Copy(self.model_save_path, self.model_tmp_path, True)
+    #     K.set_learning_phase(False)
+    #     # self.model = load_model(self.model_tmp_path)
 
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
@@ -128,25 +134,33 @@ class TFWorker(object):
 class TFTrainWorker(TFWorker):
     def __init__(self, model_rdd, go_on=False, *args, **kwargs):
         super(TFTrainWorker, self).__init__(*args, **kwargs)
-        self.model_rdd = model_rdd
+        self.model_str = getattr(model_rdd.first(), TFCompile.MODEL)
         self.go_on = go_on
         self.initial_epoch = 0
-        self.input_dict, self.output_dict = {}, {}
+        self.summary_writer = None
 
     def build_model(self):
         if self.task_index is None:
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            self.model = TFMode().deserialize(self.model_rdd)
+            self.model = TFCompile().deserialize(self.model_str)
+            self.model.valid_model()
 
-    def restore_model(self, sess):
+    def restore_checkpoint(self, sess):
         saver = tf.train.Saver()
         ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
-            K.set_learning_phase(False)
-            self.initial_epoch = int(ckpt.model_checkpoint_path.split('_')[-1])
-            saver.restore(sess, self.checkpoint_dir)
+            # K.set_learning_phase(False)
+            self.initial_epoch = int(ckpt.model_checkpoint_path.split('-')[-1])
+            saver.restore(sess, ckpt.model_checkpoint_path)
+
+    def save_checkpoint(self, sess, epoch, summary_str):
+        if self.task_index == 0:
+            if summary_str:
+                self.summary_writer.add_summary(summary_str, global_step=epoch)
+            saver = tf.train.Saver(max_to_keep=5)
+            saver.save(sess, self.checkpoint_file, epoch)
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
@@ -156,21 +170,32 @@ class TFTrainWorker(TFWorker):
         with tf.Session(self.server.target, config=config) as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            summary_writer = tf.summary.FileWriter(self.log_dir, sess.graph)
+            self.summary_writer = tf.summary.FileWriter(self.log_dir, sess.graph)
             coord = tf.train.Coordinator()
             tf.train.start_queue_runners(coord=coord, sess=sess)
 
             if self.go_on:
-                self.restore_model(sess)
-            keys = ["_task_index", "_epoch"]
+                self.restore_checkpoint(sess)
+            names, values = zip(*self.model.fetches.items())
+            names = list(names)
+            values = list(values)
+            res, summary_str = None, None
             for epoch in range(1, self.epochs + 1):
-                for _ in range(self.steps_per_epoch - 1):
-                    sess.run(self.model.fetches, self.model.feed_dict)
-                res = sess.run(self.model.fetches + [summary_op], self.model.feed_dict)
-                res = [self.task_index, epoch] + res[:-1]
-                results = [dict(zip(keys, res))]
-                ModelDir.write_result(result_file, results, True)
-                summary_writer.add_summary(res[-1], global_step=sess.run(tf.train.get_or_create_global_step()))
+                for _ in range(self.steps_per_epoch):
+                    x, y = self.generate_rdd_data
+                    if len(x) == 0:
+                        break
+                    self.model.add_params(x=x, y=y)
+
+                    if summary_op is not None:
+                        *res, summary_str = sess.run(values + [summary_op], self.model.feed_dict)
+                    else:
+                        res = sess.run(values, self.model.feed_dict)
+                result = dict((k, v) for k, v in zip(names, res) if v is not None)
+                result.update(self.common_dict(epoch + self.initial_epoch))
+                ModelDir.write_result(result_file, [result], True)
+                self.save_checkpoint(sess, epoch + self.initial_epoch, summary_str)
+
             self.tf_feed.terminate()
 
 

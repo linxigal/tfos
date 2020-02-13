@@ -1,9 +1,0 @@
-{
-  "url": "http://192.168.21.114:6080/app/#/",
-  "user": "weijinlong",
-  "password": "123",
-  "op_type": "处理算子",
-  "lib": "神经网络层",
-  "language": "python",
-  "root": "/home/wjl/github/tfos"
-}

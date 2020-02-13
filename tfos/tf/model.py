@@ -9,236 +9,74 @@
   
 """
 
-import json
-
 import tensorflow as tf
-from pyspark import RDD
-from pyspark.sql import Row, DataFrame
-from pyspark.sql import SQLContext
-from tfos.utils.check import auto_type_checker
 
-INPUTS = "inputs"
-OUTPUTS = 'outputs'
-COMPILES = 'compiles'
-PARAMS = 'params'
-GRAPH = 'graph'
+from .base import TFLayer
 
 
-class TFMode(object):
-    def __init__(self):
-        self.__inputs = []
-        self.__outputs = []
-        self.__compiles = []
-        self.__params = {}
-        self.__graph = None
+class TFMode(TFLayer):
 
-    def serialize(self, sqlc: SQLContext):
-        # self.__check_inputs()
-        data = self.to_dict()
-        return sqlc.createDataFrame([Row(model=json.dumps(data))])
+    def build_model(self):
+        raise NotImplementedError
 
-    def to_dict(self):
-        graph = self.graph if self.graph else tf.get_default_graph()
-        meta_graph = tf.train.export_meta_graph(graph=graph, clear_devices=True)
-        meta_graph_str = meta_graph.SerializeToString()
-        return {
-            INPUTS: self.__inputs,
-            OUTPUTS: self.__outputs,
-            COMPILES: self.__compiles,
-            PARAMS: self.__params,
-            GRAPH: meta_graph_str.decode('latin')
-        }
+    def add_outputs(self, *args, **kwargs):
+        """模型的输出值
 
-    def add_inputs(self, *args):
-        for tensor in args:
-            name = tensor.name
-            if name in self.__inputs:
-                raise ValueError("inputs list already exists the tensor name of '{}' !!!".format(name))
-            self.__inputs.append(name)
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        outputs = {}
+        for value in args:
+            assert isinstance(value, tf.Tensor), "function add_outputs parameter's value must be tf.Tensor"
+            name = value.name
+            outputs[name.split(':')[0]] = name
+        for key, value in kwargs.items():
+            assert isinstance(value, tf.Tensor), "function add_outputs parameter's value must be tf.Tensor"
+            outputs[key] = value.name
+        self.update_outputs(outputs)
 
-    def __check_inputs(self):
-        for name in self.__inputs:
-            if name.split(':')[0] not in self.__params:
-                raise ValueError("The input tensor type of placeholder '{}' must be assigned!!!")
 
-    def add_outputs(self, *args):
-        for tensor in args:
-            name = tensor.name
-            if name in self.__outputs:
-                raise ValueError("outputs list already exists the tensor name of '{}' !!!".format(name))
-            self.__outputs.append(name)
+class TFCompile(TFLayer):
 
-    def add_compiles(self, *args):
-        count = 1
-        for tensor in args:
-            print(count, tensor, type(tensor))
-            count += 1
-            name = tensor.name
-            if name in self.__compiles:
-                raise ValueError("metrics list already exists the tensor name of '{}' !!!".format(name))
-            self.__compiles.append(name)
+    def compile(self):
+        raise NotImplementedError
 
-    def add_params(self, **kwargs):
-        self.__params.update(kwargs)
+    def add_metrics(self, *args, **kwargs):
+        """加入模型的评估指标、优化操作等，例如损失值，正确率等张量或者操作
 
-    @property
-    def params(self):
-        return self.__params
-
-    @property
-    def graph(self):
-        return self.__graph
-
-    @graph.setter
-    @auto_type_checker
-    def graph(self, graph: tf.Graph):
-        self.__graph = graph
-
-    @auto_type_checker
-    def deserialize(self, model_rdd: DataFrame):
-        model = model_rdd.first().model
-        data = json.loads(model)
-        # self.graph = self.graph if self.graph else tf.get_default_graph()
-        self.__params = data[PARAMS]
-        self.__inputs = data[INPUTS]
-        self.__outputs = data[OUTPUTS]
-
-        meta_graph = tf.MetaGraphDef()
-        meta_graph.ParseFromString(bytes(data[GRAPH], encoding='latin'))
-        tf.train.import_meta_graph(meta_graph)
-        return self
-
-    @property
-    def feed_dict(self):
-        feed_dict = {}
-        graph = self.graph if self.graph else tf.get_default_graph()
-        for name in self.__inputs:
-            feed_dict[graph.get_tensor_by_name(name)] = self.__params[name.split(':')[0]]
-        return feed_dict
-
-    @property
-    def outputs(self):
-        names, tenser_list = [], []
-        graph = self.graph if self.graph else tf.get_default_graph()
-        for name in self.__outputs:
-            names.append(name.split(':')[0])
-            tenser_list.append(graph.get_tensor_by_name(name))
-        return names, tenser_list
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        metrics = {}
+        for value in args:
+            assert isinstance(value, (tf.Operation, tf.Tensor)), \
+                "function add_metrics parameter's value must be tf.Operation"
+            name = value.name
+            metrics[name.split(':')[0]] = name
+        for key, value in kwargs.items():
+            assert isinstance(value, (tf.Operation, tf.Tensor)), \
+                "function add_metrics parameter's value must be tf.Operation"
+            metrics[key] = value.name
+        self.update_metrics(metrics)
 
     @property
     def fetches(self):
-        names, tenser_list = [], []
-        graph = self.graph if self.graph else tf.get_default_graph()
-        for name in self.__compiles:
-            names.append(name.split(':')[0])
-            tenser_list.append(graph.get_tensor_by_name(name))
-        return names, tenser_list
+        """ 获取模型输出值或者评估值， 来优化训练模型
+
+        :return:
+        """
+        return self.metrics
 
 
-@auto_type_checker
-def export_inputs(inputs: dict):
-    input_dict = {}
-    if not isinstance(inputs, dict):
-        raise ValueError("inputs must be dict")
-    for key, value in inputs.items():
-        if not isinstance(key, tf.placeholder):
-            raise ValueError("the keys for inputs must be type of tf.placeholder")
-        input_dict[key.name] = value
-    return input_dict
-
-
-@auto_type_checker
-def export_outputs(outputs: (list, dict)):
-    output_dict = {}
-    if not isinstance(outputs, (list, dict)):
-        raise ValueError("outputs must be list or dict")
-    if isinstance(outputs, list):
-        for value in outputs:
-            if not isinstance(value, tf.Tensor):
-                raise ValueError("the values for outputs must be type of tf.Tensor")
-            name = value.name
-            output_dict[name.split(":")[0]] = name
-
-    else:
-        for key, value in outputs.items():
-            if not isinstance(value, tf.Tensor):
-                raise ValueError("the values for outputs must be type of tf.Tensor")
-            output_dict[key] = value.name
-    return outputs
-
-
-@auto_type_checker
-def export_model(sqlc: SQLContext, inputs: dict, outputs: (list, dict), graph=None):
+class TFComModel(TFMode, TFCompile):
     """
-    tensorflow模型序列化，并将序列化的结果转化成spark的DataFrame
-
-    :param sqlc:
-    :param inputs:
-    :param outputs:
-    :param graph:
-    :return:
+    基于TensorFlow的复合模型，即使用一个算子构建模型的和模型的编译
     """
-    graph = graph if graph else tf.get_default_graph()
-    meta_graph = tf.train.export_meta_graph(graph=graph)
-    meta_graph_str = meta_graph.SerializeToString()
-    data = {
-        INPUTS: export_inputs(inputs),
-        OUTPUTS: export_outputs(outputs),
-        GRAPH: meta_graph_str
-    }
-    return sqlc.createDataFrame([Row(model=json.dumps(data))])
 
+    def build_model(self):
+        raise NotImplementedError
 
-@auto_type_checker
-def import_model(model_rdd: DataFrame, graph=None):
-    input_dict = {}
-    output_dict = {}
-    if not model_rdd:
-        raise ValueError("tensorflow model_rdd not exists")
-    model = model_rdd.first().model
-    data = json.loads(model)
-    graph = graph if graph else tf.get_default_graph()
-
-    meta_graph = tf.MetaGraphDef()
-    meta_graph.ParseFromString(data[GRAPH])
-    tf.train.import_meta_graph(meta_graph)
-
-    for key, value in data[INPUTS].items():
-        input_dict[graph.get_tensor_by_name(key)] = value
-
-    for key, value in data[OUTPUTS].items():
-        output_dict[key] = graph.get_tensor_by_name(value)
-
-    return input_dict, output_dict
-
-
-@auto_type_checker
-def export_tf_model(sqlc: SQLContext, params: dict, graph=None):
-    """
-    tensorflow模型序列化，并将序列化的结果转化成spark的DataFrame
-
-    :param sqlc:
-    :param params:
-    :param graph:
-    :return:
-    """
-    graph = graph if graph else tf.get_default_graph()
-    meta_graph = tf.train.export_meta_graph(graph=graph)
-    meta_graph_str = meta_graph.SerializeToString()
-    data = {
-        PARAMS: params,
-        GRAPH: meta_graph_str
-    }
-    return sqlc.createDataFrame([Row(model=json.dumps(data))])
-
-
-@auto_type_checker
-def import_tf_model(model_rdd: DataFrame):
-    if not model_rdd:
-        raise ValueError("tensorflow model_rdd not exists")
-    model = model_rdd.first().model
-    data = json.loads(model)
-    meta_graph = tf.MetaGraphDef()
-    meta_graph.ParseFromString(data[GRAPH])
-    tf.train.import_meta_graph(meta_graph)
-    return data[PARAMS]
+    def compile(self):
+        pass
