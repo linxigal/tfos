@@ -6,10 +6,10 @@
 """
 
 import math
-# from facenet.src import facenet
 import os
 
 import numpy as np
+import tensorflow as tf
 
 from tfos.data import DATA_INDEX, MARK_INDEX
 
@@ -33,7 +33,8 @@ class ImageClass(object):
 def get_data_set(path, has_class_directories=True):
     data_set = []
     path_exp = os.path.expanduser(path)
-    classes = [path for path in os.listdir(path_exp) if os.path.isdir(os.path.join(path_exp, path))]
+
+    classes = [path for path in tf.io.gfile.listdir(path_exp) if tf.io.gfile.isdir(os.path.join(path_exp, path))]
     classes.sort()
     n_classes = len(classes)
     for i in range(n_classes):
@@ -47,8 +48,8 @@ def get_data_set(path, has_class_directories=True):
 
 def get_image_paths(class_dir):
     image_paths = []
-    if os.path.isdir(class_dir):
-        images = os.listdir(class_dir)
+    if tf.io.gfile.isdir(class_dir):
+        images = tf.io.gfile.listdir(class_dir)
         image_paths = [os.path.join(class_dir, img) for img in images]
     return image_paths
 

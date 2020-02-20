@@ -26,7 +26,7 @@ class FolderClass(Base):
 
     def __init__(self, data_dir, data_mode='train', split_ratio='0.0', min_num_per_class='1', mode='SPLIT_IMAGES'):
         super(FolderClass, self).__init__()
-        self.p('data_dir', data_dir)
+        self.p('data_dir', [{"path": data_dir}])
         self.p('data_mode', data_mode)
         self.p('split_ratio', split_ratio)
         self.p('min_num_per_class', min_num_per_class)
@@ -39,7 +39,7 @@ class FolderClass(Base):
         from tfos.choices import SPLIT_MODE, DATA_MODE
 
         # param = json.loads('<#zzjzParam#>')
-        data_dir = param.get('data_dir')
+        data_dir = param.get('data_dir')[0]['path']
         data_mode = param.get('data_mode', DATA_MODE[0])
         split_ratio = param.get('split_ratio', 0.0)
         min_num_per_class = param.get('min_num_per_class', 1)
@@ -74,7 +74,7 @@ class TestFolderClass(TestCase):
 
     def setUp(self) -> None:
         self.is_local = True
-        self.data_dir = os.path.join(self.path, "data/data/lfw/lfw_160_30/images")
+        self.data_dir = os.path.join(self.path, "data/data/lfw/lfw_160_30/test")
 
     # @unittest.skip('')
     def test_lfw(self):

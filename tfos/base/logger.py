@@ -28,7 +28,7 @@ class Logger(object):
         return self.logger
 
 
-logger = Logger(__file__).sys_log(('192.168.21.27', 514))
+logger = Logger(__file__).sys_log(('2.2.2.3', 514))
 
 if __name__ == '__main__':
     logger = Logger(__file__).sys_log()

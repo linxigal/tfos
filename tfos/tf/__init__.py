@@ -10,9 +10,12 @@
 """
 
 import tensorflow as tf
-from .model import export_tf_model, import_tf_model, TFMode
+# from .model import export_tf_model, import_tf_model, TFMode
+from .model import TFMode, TFCompile, TFComModel
+from .base import TFModeMiddle
 
-__all__ = ['export_tf_model', 'import_tf_model', 'add_collection', 'extract_params', 'TFMode']
+# __all__ = ['export_tf_model', 'import_tf_model', 'TFMode', 'TFCompile']
+__all__ = ['TFMode', 'TFCompile', 'TFModeMiddle']
 
 
 def add_collection(name, *args):

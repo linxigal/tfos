@@ -10,6 +10,7 @@
 """
 
 import math
+
 from tensorflowonspark import TFCluster
 
 from tfos.base import ext_exception
@@ -35,14 +36,19 @@ class TFOnSparkBase(object):
 
 
 class TFOnSpark(TFOnSparkBase):
+
+    @property
+    def num_workers(self):
+        num_workers = self.cluster_size - self.num_ps
+        assert num_workers > 0, "cluster_size, num_ps must be positive, and cluster_size > num_ps"
+        return num_workers
+
     @ext_exception("tf train model")
     def train(self, data_rdd, model_rdd, batch_size, epochs, model_dir, go_on=False):
-        columns = model_rdd.columns
-        assert "model_config" in columns, "not exists model layer config!"
-        assert "compile_config" in columns, "not exists model compile config!"
         n_samples = data_rdd.count()
-        # steps_per_epoch = n_samples // batch_size // self.num_workers + 1
+        # steps_per_epoch = n_samples // batch_size // self.num_workers
         steps_per_epoch = math.ceil(n_samples / batch_size / self.num_workers)
+        assert steps_per_epoch > 0
         md = ModelDir(model_dir, 'train*')
         if go_on:
             md.create_model_dir()
@@ -59,8 +65,7 @@ class TFOnSpark(TFOnSparkBase):
         cluster.train(data_rdd.rdd, num_epochs=epochs, feed_timeout=60000)
         cluster.shutdown()
         results = md.read_result()
-        if results:
-            return self.sqlc.createDataFrame(results)
+        return self.sqlc.createDataFrame(results)
 
     @ext_exception('tf evaluate model')
     def evaluate(self, data_rdd, steps, model_dir):
