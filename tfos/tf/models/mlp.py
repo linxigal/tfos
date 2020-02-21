@@ -8,32 +8,39 @@
 import tensorflow as tf
 
 from tfos.tf import TFMode, TFCompile
-from tfos.base import logger
 
 
 class MLPModel(TFMode):
 
-    def __init__(self, keep_prob):
+    def __init__(self, input_dim=784, hidden_units=300, keep_prob=0.8):
+        """
+        :param input_dim: 输入节点数
+        :param hidden_units: 隐含层节点数
+        :param keep_prob: Dropout失活率
+        """
         super(MLPModel, self).__init__()
+        self.input_dim = input_dim
+        self.hidden_units = hidden_units
         self.add_params(keep_prob=keep_prob)
 
     def build_model(self):
-        in_units = 784  # 输入节点数
-        h1_units = 300  # 隐含层节点数
-        W1 = tf.Variable(tf.truncated_normal([in_units, h1_units], stddev=0.1))  # 初始化隐含层权重W1，服从默认均值为0，标准差为0.1的截断正态分布
-        b1 = tf.Variable(tf.zeros([h1_units]))  # 隐含层偏置b1全部初始化为0
-        W2 = tf.Variable(tf.zeros([h1_units, 10]))
+        # in_units = 784  # 输入节点数
+        # h1_units = 300  # 隐含层节点数
+        # 初始化隐含层权重W1，服从默认均值为0，标准差为0.1的截断正态分布
+        w1 = tf.Variable(tf.truncated_normal([self.input_dim, self.hidden_units], stddev=0.1))
+        b1 = tf.Variable(tf.zeros([self.hidden_units]))  # 隐含层偏置b1全部初始化为0
+        w2 = tf.Variable(tf.zeros([self.hidden_units, 10]))
         b2 = tf.Variable(tf.zeros([10]))
-        x = tf.placeholder(tf.float32, [None, in_units])
+        x = tf.placeholder(tf.float32, [None, self.input_dim])
         keep_prob = tf.placeholder(tf.float32)  # Dropout失活率
 
         # 定义模型结构
-        hidden1 = tf.nn.relu(tf.matmul(x, W1) + b1)
+        hidden1 = tf.nn.relu(tf.matmul(x, w1) + b1)
         hidden1_drop = tf.nn.dropout(hidden1, rate=1 - keep_prob)
-        y = tf.nn.softmax(tf.matmul(hidden1_drop, W2) + b2)
+        y = tf.nn.softmax(tf.matmul(hidden1_drop, w2) + b2)
 
         self.add_inputs(x=x, keep_prob=keep_prob)
-        self.add_outputs(y)
+        self.add_outputs(y=y)
         return self
 
 

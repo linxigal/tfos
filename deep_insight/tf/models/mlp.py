@@ -12,7 +12,7 @@ class MLPModel(Base):
     """多层感知机模型层
 
     参数：
-        keep_prob：节点失活率
+        keep_prob：节点存活率
 
     """
 
@@ -27,12 +27,24 @@ class MLPModel(Base):
         from tfos.tf import TFModeMiddle
 
         # param = json.loads('<#zzjzParam#>')
-        keep_prob = param.get('keep_prob')
+        input_dim = param.get('input_dim', 784)
+        hidden_units = param.get('hidden_units', 300)
+        keep_prob = param.get('keep_prob', 0.8)
 
-        keep_prob = float(keep_prob)
-        assert 0 <= keep_prob <= 1, ""
-
-        output_df = TFModeMiddle(MLPModel(keep_prob), sqlc).serialize
+        kwargs = {}
+        if input_dim:
+            input_dim = int(input_dim)
+            assert input_dim > 0
+            kwargs['input_dim'] = input_dim
+        if hidden_units:
+            hidden_units = int(hidden_units)
+            assert hidden_units > 0
+            kwargs['hidden_units'] = hidden_units
+        if keep_prob:
+            keep_prob = float(keep_prob)
+            assert 0 <= keep_prob <= 1
+            kwargs['keep_prob'] = keep_prob
+        output_df = TFModeMiddle(MLPModel(**kwargs), sqlc).serialize
         output_df.show()
         outputRDD('<#zzjzRddName#>_mlp_model', output_df)
 
