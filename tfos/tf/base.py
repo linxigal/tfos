@@ -40,6 +40,8 @@ class TFBase(object):
 
         if 'x' not in self.__inputs:
             raise ValueError("TF Model inputs must contains placeholder 'x'!")
+        if 'y' not in self.__outputs:
+            raise ValueError("TF Model outputs must contains Tensor 'y'!")
 
     @auto_type_checker
     def serialize(self, sqlc: SQLContext):

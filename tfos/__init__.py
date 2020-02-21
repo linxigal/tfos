@@ -5,7 +5,8 @@
 :File    : __init__.py.py
 """
 
-VERSION = (0, 3, 6)
+# 版本号对应： 模块-大功能-小功能-bug解决
+VERSION = (2, 2, 2, 1)
 
 import os
 from tfos.tfos import TFOS
