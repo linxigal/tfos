@@ -79,22 +79,18 @@ class TFOnSpark(TFOnSparkBase):
         cluster.train(data_rdd.rdd, num_epochs=1, feed_timeout=6000)
         cluster.shutdown()
         results = md.read_result()
-        if results:
-            return self.sqlc.createDataFrame(results)
+        return self.sqlc.createDataFrame(results)
 
     @ext_exception('tf predict model')
-    def predict(self, data_rdd, steps, model_dir, output_prob=False):
+    def predict(self, data_rdd, steps, model_dir, params=None):
         md = ModelDir(model_dir, 'predict*')
         steps_per_epoch = data_rdd.count() if steps <= 0 else steps
         steps_per_epoch = math.ceil(steps_per_epoch / self.num_workers)
-        worker = TFPredictWorker(steps_per_epoch=steps_per_epoch,
-                                 output_prob=output_prob,
-                                 **md.to_dict())
+        worker = TFPredictWorker(params, steps_per_epoch=steps_per_epoch, **md.to_dict())
         md.delete_result_file()
         cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
                                 input_mode=self.input_mode)
         cluster.train(data_rdd.rdd, num_epochs=1, feed_timeout=6000)
         cluster.shutdown()
         results = md.read_result()
-        if results:
-            return self.sqlc.createDataFrame(results)
+        return self.sqlc.createDataFrame(results)

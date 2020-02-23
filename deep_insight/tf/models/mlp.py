@@ -12,6 +12,8 @@ class MLPModel(Base):
     """多层感知机模型层
 
     参数：
+        input_dim： 输入维度
+        hidden_units：隐藏单元
         keep_prob：节点存活率
 
     """

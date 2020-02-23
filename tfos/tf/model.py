@@ -14,7 +14,7 @@ import tensorflow as tf
 from .base import TFLayer
 
 
-class TFMode(TFLayer):
+class TFModel(TFLayer):
 
     def build_model(self):
         raise NotImplementedError
@@ -70,7 +70,7 @@ class TFCompile(TFLayer):
         return self.metrics
 
 
-class TFComModel(TFMode, TFCompile):
+class TFComModel(TFModel, TFCompile):
     """
     基于TensorFlow的复合模型，即使用一个算子构建模型的和模型的编译
     """

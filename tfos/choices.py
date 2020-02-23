@@ -45,6 +45,7 @@ LOSSES = [
     'sparse_categorical_crossentropy',  # 如上，但接受稀疏标签, 需要在标签数据上增加一个维度：np.expand_dims(y,-1)
     'binary_crossentropy',  # 对数损失， log loss
     'poisson',  # 即(predictions - targets * log(predictions))的均值
+    'crf_loss',
 ]
 
 METRICS = [
@@ -55,6 +56,7 @@ METRICS = [
     'sparse_categorical_accuracy',
     'top_k_categorical_accuracy',
     'sparse_top_k_categorical_accuracy',
+    'crf_accuracy',
 ]
 METRICS.extend(LOSSES)
 
