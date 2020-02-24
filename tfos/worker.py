@@ -8,7 +8,6 @@
 import json
 import os
 import time
-import tf_crf_layer
 
 import numpy as np
 import tensorflow as tf
@@ -18,12 +17,8 @@ from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
 from tensorflowonspark import TFNode
 
-from tfos.base import ModelType, gmt, logger
+from tfos.base import ModelType, gmt
 from tfos.base.gfile import ModelDir
-
-
-# 使用crf包的损失函数，必须引用这个包
-print(tf_crf_layer.__version__)
 
 
 class Worker(object):

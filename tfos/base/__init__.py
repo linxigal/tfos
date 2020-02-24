@@ -15,6 +15,8 @@ from tensorflow.python.keras.layers import InputLayer
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.optimizer_v2.optimizer_v2 import OptimizerV2
 from tensorflow.python.keras.optimizers import Optimizer, serialize
+from tf_crf_layer.loss import crf_loss
+from tf_crf_layer.metrics import crf_accuracy
 
 from .config import *
 from .exception import ext_exception
@@ -26,6 +28,9 @@ __all__ = [
     'valid_activations', 'valid_losses', 'valid_metrics', 'valid_optimizers', 'valid_regularizers',
     'ModelType', 'ROUND_NUM',
 ]
+
+tf.keras.utils.get_custom_objects()[crf_loss.__name__] = crf_loss
+tf.keras.utils.get_custom_objects()[crf_accuracy.__name__] = crf_accuracy
 
 # 保留小数点位数
 ROUND_NUM = 6
