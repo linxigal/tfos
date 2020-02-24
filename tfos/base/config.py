@@ -49,6 +49,7 @@ valid_metrics = valid_losses + [
     'sparse_categorical_accuracy',
     'top_k_categorical_accuracy',
     'sparse_top_k_categorical_accuracy',
+    'crf_accuracy',
 ]
 
 # keras.compile

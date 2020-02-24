@@ -23,7 +23,8 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam, RMSprop, SGD
 
 from tfos.base.gfile import ModelDir
-from tfos.worker import Worker, logger
+from tfos.base import logger
+from tfos.worker import Worker
 from .model import preprocess_true_boxes, yolo_loss, yolo_eval
 from .utils import get_random_data, letterbox_image
 
