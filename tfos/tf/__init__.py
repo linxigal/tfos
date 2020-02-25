@@ -11,11 +11,11 @@
 
 import tensorflow as tf
 # from .model import export_tf_model, import_tf_model, TFMode
-from .model import TFMode, TFCompile, TFComModel
+from .model import TFModel, TFCompile, TFComModel
 from .base import TFModeMiddle
 
 # __all__ = ['export_tf_model', 'import_tf_model', 'TFMode', 'TFCompile']
-__all__ = ['TFMode', 'TFCompile', 'TFModeMiddle']
+__all__ = ['TFModel', 'TFCompile', 'TFModeMiddle']
 
 
 def add_collection(name, *args):

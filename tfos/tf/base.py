@@ -19,6 +19,10 @@ METRICS = 'metrics'
 PARAMS = 'params'
 GRAPH = 'graph'
 
+INPUT_X = 'x'
+Y_TRUE = 'y'
+PREDICTION = 'y'
+
 
 class TFBase(object):
     MODEL = 'model'
@@ -29,41 +33,50 @@ class TFBase(object):
         self.__metrics = {}
         self.__params = {}
         self.__graph = None
+        self.__INPUTS_CONTAINS_Y = True  # Whether inputs contains 'y'
 
     def valid_model(self):
-        if not self.__inputs:
-            raise ValueError("TF Model inputs couldn't be empty!")
-        if not self.__outputs:
-            raise ValueError("TF Model outputs couldn't be empty!")
-        if not self.__metrics:
-            raise ValueError("TF Model metrics couldn't be empty!")
+        self._check_model()
+        self._check_compile()
 
-        if 'x' not in self.__inputs:
+    def _check_model(self):
+        if not self.inputs:
+            raise ValueError("TF Model inputs couldn't be empty!")
+        if INPUT_X not in self.inputs:
             raise ValueError("TF Model inputs must contains placeholder 'x'!")
-        if 'y' not in self.__outputs:
+
+    def _check_compile(self):
+        if Y_TRUE not in self.inputs:
+            raise ValueError("TF Model inputs must contains placeholder 'y'!")
+        if not self.outputs:
+            raise ValueError("TF Model outputs couldn't be empty!")
+        if PREDICTION not in self.outputs:
             raise ValueError("TF Model outputs must contains Tensor 'y'!")
 
+    @classmethod
     @auto_type_checker
-    def serialize(self, sqlc: SQLContext):
-        data = self.to_dict()
-        return sqlc.createDataFrame([Row(**{self.MODEL: json.dumps(data)})])
+    def from_json(cls, data: dict):
+        model = cls()
+        model.to_self(data)
+        return model
 
     @auto_type_checker
-    def deserialize(self, model_str):
-        data = json.loads(model_str)
+    def connect_model(self, data: dict):
         self.to_self(data)
         return self
 
-    def to_dict(self):
-        meta_graph = tf.train.export_meta_graph(graph=self.graph, clear_devices=True)
-        meta_graph_str = meta_graph.SerializeToString()
-        return {
+    def to_json(self, is_graph=True):
+        data = {
             INPUTS: self.__inputs,
             OUTPUTS: self.__outputs,
             METRICS: self.__metrics,
-            PARAMS: self.__params,
-            GRAPH: meta_graph_str.decode('latin')
+            PARAMS: self.__params
         }
+        if is_graph:
+            meta_graph = tf.train.export_meta_graph(graph=self.graph, clear_devices=True)
+            meta_graph_str = meta_graph.SerializeToString()
+            data[GRAPH] = meta_graph_str.decode('latin')
+        return data
 
     @auto_type_checker
     def to_self(self, data: dict):
@@ -71,9 +84,10 @@ class TFBase(object):
         self.__outputs.update(data[OUTPUTS])
         self.__metrics.update(data[METRICS])
         self.__params.update(data[PARAMS])
-        meta_graph = tf.MetaGraphDef()
-        meta_graph.ParseFromString(bytes(data[GRAPH], encoding='latin'))
-        tf.train.import_meta_graph(meta_graph)
+        if GRAPH in data:
+            meta_graph = tf.MetaGraphDef()
+            meta_graph.ParseFromString(bytes(data[GRAPH], encoding='latin'))
+            tf.train.import_meta_graph(meta_graph)
 
     @auto_type_checker
     def update_inputs(self, data: dict):
@@ -95,6 +109,8 @@ class TFBase(object):
     def inputs(self):
         inputs = {}
         for key, value in self.__inputs.items():
+            if not self.icy and key == Y_TRUE:
+                continue
             inputs[key] = self.graph.get_tensor_by_name(value)
         return inputs
 
@@ -149,6 +165,20 @@ class TFBase(object):
     def graph(self, value: tf.Graph):
         self.__graph = value
 
+    @property
+    def icy(self):
+        return self.__INPUTS_CONTAINS_Y
+
+    @icy.setter
+    @auto_type_checker
+    def icy(self, value: bool):
+        self.__INPUTS_CONTAINS_Y = value
+
+    @property
+    def output_node_names(self):
+        names = [self.__outputs[PREDICTION][:-2]]
+        return names
+
 
 @auto_type_checker
 def export_inputs(inputs: dict):
@@ -186,14 +216,28 @@ class TFMetaClass(type):
     def __new__(mcs, name, bases, attrs):
         if name == "TFLayer":
             bases = (TFBase,)
+
         if 'build_model' in attrs:
-            attrs['add_model'] = attrs['build_model']
+            attrs['build'] = attrs['build_model']
         elif 'compile' in attrs:
-            attrs['add_model'] = attrs['compile']
-        return type.__new__(mcs, name, bases, attrs)
+            attrs['build'] = attrs['compile']
+
+        new_obj = type.__new__(mcs, name, bases, attrs)
+
+        if name == 'TFModel':
+            new_obj.valid = getattr(new_obj, '_check_model')
+        elif name == 'TFCompile':
+            new_obj.valid = getattr(new_obj, '_check_compile')
+        elif name == 'TFComModel':
+            new_obj.valid = getattr(new_obj, 'valid_model')
+        return new_obj
 
 
 class TFLayer(metaclass=TFMetaClass):
+
+    def __init__(self):
+        super(TFLayer, self).__init__()
+        self.__feed_dict = {}
 
     def add_inputs(self, *args, **kwargs):
         """加入模型的输入张量，placeholder定义的张量
@@ -222,10 +266,10 @@ class TFLayer(metaclass=TFMetaClass):
 
     @property
     def feed_dict(self):
-        feed_dict = {}
-        for key, value in self.inputs.items():
-            feed_dict[value] = self.params[key]
-        return feed_dict
+        if not self.__feed_dict:
+            for key, value in self.inputs.items():
+                self.__feed_dict[value] = self.params.get(key)
+        return self.__feed_dict
 
     def outputs_list(self):
         return list(self.outputs.values())
@@ -234,11 +278,28 @@ class TFLayer(metaclass=TFMetaClass):
     def global_step(self):
         return tf.train.get_or_create_global_step()
 
+    def write_model(self, path, is_graph=True):
+        """保存模型
+
+        :param path: 保存模型文件的路径
+        :param is_graph: 是否保存模型构建图
+        :return:
+        """
+        with tf.io.gfile.GFile(path, 'w') as f:
+            f.write(json.dumps(self.to_json(is_graph), indent=4))
+
+    @classmethod
+    def read_model(cls, path):
+        with tf.io.gfile.GFile(path, 'r') as f:
+            data = json.load(f)
+            model = cls.from_json(data)
+            return model
+
 
 class TFModeMiddle(object):
 
     @auto_type_checker
-    def __init__(self, model, sqlc: (None, SQLContext) = None, model_rdd: (None, DataFrame) = None):
+    def __init__(self, model, sqlc: (type(None), SQLContext) = None, model_rdd: (type(None), DataFrame) = None):
         super(TFModeMiddle, self).__init__()
         self.__model = model
         self.__model_rdd = model_rdd
@@ -249,15 +310,11 @@ class TFModeMiddle(object):
     def serialize(self):
         if self.__model_rdd:
             tf.reset_default_graph()
-            model_str = getattr(self.__model_rdd.first(), self.__model.MODEL)
-            self.__model.deserialize(model_str)
+            model_config = json.loads(getattr(self.__model_rdd.first(), self.__model.MODEL))
+            self.__model.connect_model(model_config)
 
-        if hasattr(self.__model, "build_model"):
-            self.__model.build_model()
-        elif hasattr(self.__model, "compile"):
-            self.__model.compile()
-        else:
-            raise ValueError("the model must be inheritance 'TFModel' or 'TFCompile'!!!")
+        self.__model.build()
+        self.__model.valid()
 
-        data = self.__model.to_dict()
+        data = self.__model.to_json()
         return self.__sqlc.createDataFrame([Row(**{self.__model.MODEL: json.dumps(data)})])

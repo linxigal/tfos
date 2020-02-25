@@ -7,10 +7,10 @@
 
 import tensorflow as tf
 
-from tfos.tf import TFMode, TFCompile
+from tfos.tf import TFModel, TFCompile
 
 
-class MLPModel(TFMode):
+class MLPModel(TFModel):
 
     def __init__(self, input_dim=784, hidden_units=300, keep_prob=0.8):
         """
@@ -48,7 +48,8 @@ class MLPCompile(TFCompile):
 
     def compile(self):
         # 训练部分
-        y = self.outputs_list()[0]
+        # y = self.outputs_list()[0]
+        y = self.outputs['y']
         y_ = tf.placeholder(tf.float32, [None, 10])
         cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), 1))
         train_op = tf.train.AdagradOptimizer(0.3).minimize(cross_entropy)
