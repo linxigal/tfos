@@ -20,11 +20,11 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.python.keras.layers import Lambda, Input
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.optimizers import Adam, RMSprop, SGD
+from tensorflow.python.keras.optimizers import Adam
 
 from tfos.base.gfile import ModelDir
 from tfos.base import logger
-from tfos.worker import Worker
+from tfos.k.worker import KWorker
 from .model import preprocess_true_boxes, yolo_loss, yolo_eval
 from .utils import get_random_data, letterbox_image
 
@@ -82,7 +82,7 @@ class YOLOV3Method(object):
         return dest_path
 
 
-class YOLOV3Worker(Worker, YOLOV3Method):
+class YOLOV3Worker(KWorker, YOLOV3Method):
     def __init__(self, model_rdd, classes_path, anchors_path, go_on, val_path, image_size,
                  weights_path=None, freeze_body=2, *args, **kwargs):
         super(YOLOV3Worker, self).__init__(*args, **kwargs)

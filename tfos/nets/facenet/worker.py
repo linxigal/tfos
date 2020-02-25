@@ -17,9 +17,9 @@ from facenet.src import facenet
 from tensorflowonspark import TFNode
 
 from tfos.base.gfile import ModelDir
-from tfos.tf.model import INPUTS, OUTPUTS
+from tfos.tf.base import INPUTS, OUTPUTS
 from tfos.tf.worker import TFTrainWorker
-from tfos.tf.model import TFMode
+from tfos.tf import TFModel
 
 
 class FaceNetSoftMaxWorker(TFTrainWorker):
@@ -62,7 +62,7 @@ class FaceNetSoftMaxWorker(TFTrainWorker):
             raise ValueError("task_index cannot None!!!")
         with tf.device(tf.train.replica_device_setter(
                 worker_device="/job:worker/task:{}".format(self.task_index), cluster=self.cluster)):
-            self.model = TFMode().deserialize(self.model_rdd)
+            self.model = TFModel().deserialize(self.model_rdd)
 
     def execute(self):
         result_file = os.path.join(self.result_dir, "train_result_{}.txt".format(self.task_index))
@@ -120,7 +120,5 @@ class FaceNetSoftMaxWorker(TFTrainWorker):
         if ctx.job_name == "ps":
             self.server.join()
         elif ctx.job_name == "worker":
-            self.create_tmp_dir()
             self.build_model()
             self.execute()
-            self.delete_tmp_dir()
