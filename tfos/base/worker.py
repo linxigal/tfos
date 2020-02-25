@@ -31,15 +31,16 @@ class Worker(object):
         self.cluster = None
         self.server = None
         self.model = None
-        self.checkpoint_suffix = None
         self.model_suffix = None
 
     @property
     def checkpoint_path(self):
-        if self.checkpoint_suffix:
-            filename = '-'.join([self.name, self.checkpoint_suffix])
-        else:
+        if self.model_suffix == 'h5':
+            filename = self.name + '-{epoch}'
+        elif self.model_suffix == 'pb':
             filename = self.name
+        else:
+            raise ValueError("save model suffix couldn't be None, choices pb|h5")
         return os.path.join(self.checkpoint_dir, filename)
 
     @property
