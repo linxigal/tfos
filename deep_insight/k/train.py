@@ -226,7 +226,7 @@ class TestModel(TestCase):
         # show network struct
         SummaryLayer(m).run()
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_train_model(self):
         Mnist(self.mnist_dir, mode='train').b(DATA_BRANCH).run()
         self.build_model()
@@ -239,7 +239,7 @@ class TestModel(TestCase):
                    model_dir=self.model_dir,
                    go_on='false').run()
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_evaluate_model(self):
         Mnist(self.mnist_dir, mode='test').b(DATA_BRANCH).run()
         EvaluateModel(input_prev_layers=MODEL_BRANCH,
