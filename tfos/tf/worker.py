@@ -11,7 +11,6 @@
 
 import json
 import os
-import time
 
 import numpy as np
 import tensorflow as tf
@@ -20,50 +19,23 @@ from tensorflowonspark import TFNode
 
 from tfos.base import logger
 from tfos.base.gfile import ModelDir
+from tfos.base.worker import Worker
 from tfos.tf import TFCompile
 
 
-class TFWorker(object):
-    def __init__(self, batch_size=1,
-                 epochs=1,
-                 steps_per_epoch=1,
-                 name="model",
-                 save_dir=None,
-                 result_dir=None,
-                 checkpoint_dir=None,
-                 log_dir=None):
-        self.name = name
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.steps_per_epoch = steps_per_epoch
-        self.save_dir = save_dir
-        self.result_dir = result_dir
-        self.checkpoint_dir = checkpoint_dir
-        self.log_dir = log_dir
-        self.task_index = None
-        self.job_name = None
-        self.tf_feed = None
-        self.cluster = None
-        self.server = None
-        self.model = None
-        self.labels = []
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name)
+class TFWorker(Worker):
+
+    def __init__(self, *args, **kwargs):
+        super(TFWorker, self).__init__(*args, **kwargs)
+        self.model_suffix = 'pb'
 
     @property
     def global_step(self):
         return tf.train.get_global_step()
 
     @property
-    def model_name(self, suffix='.ckpt'):
-        return self.name + suffix
-
-    @property
-    def model_path(self):
-        return os.path.join(self.save_dir, 'model.pb')
-
-    @property
     def model_config_path(self):
-        return os.path.join(self.save_dir, 'model.config')
+        return os.path.join(self.save_dir, '{}.config'.format(self.name))
 
     def common_dict(self, epoch):
         return {
@@ -82,7 +54,6 @@ class TFWorker(object):
             for row in batches:
                 inputs.append(row.feature)
                 labels.append(row.label)
-                self.labels.append(np.argmax(row.label))
             inputs = np.array(inputs).astype('float32')
             labels = np.array(labels).astype('float32')
             return inputs, labels
@@ -90,10 +61,8 @@ class TFWorker(object):
     def feed_dict(self, x, y=None):
         data = self.model.feed_dict
         data[self.model.inputs['x']] = x
-        if y is not None:
+        if self.model.icy and y is not None:
             data[self.model.inputs['y']] = y
-        # else:
-        #     data.pop(self.model.inputs['y'])
         return data
 
     def build_model(self):
@@ -143,7 +112,7 @@ class TFTrainWorker(TFWorker):
             if summary_str:
                 self.summary_writer.add_summary(summary_str, global_step=epoch)
             saver = tf.train.Saver(max_to_keep=5)
-            saver.save(sess, self.checkpoint_file, epoch)
+            saver.save(sess, self.checkpoint_path, epoch)
 
     def save_model(self, sess):
         constant_graph = graph_util.convert_variables_to_constants(sess, sess.graph_def, self.model.output_node_names)
@@ -177,7 +146,6 @@ class TFTrainWorker(TFWorker):
                         *res, summary_str = sess.run(values + [summary_op], self.feed_dict(x=x, y=y))
                     else:
                         res = sess.run(values, self.feed_dict(x=x, y=y))
-                    break
                 result = dict((k, v) for k, v in zip(names, res) if v is not None)
                 result.update(self.common_dict(epoch + self.initial_epoch))
                 ModelDir.write_result(result_file, [result], True)

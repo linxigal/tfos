@@ -9,17 +9,15 @@
   
 """
 
-import unittest
-
 from deep_insight import *
 from deep_insight.base import *
-from deep_insight.compile import Compile
+from deep_insight.k.compile import Compile
 from deep_insight.data.mnist import Mnist
-from deep_insight.layers.convolution import Convolution2D
-from deep_insight.layers.core import Dense, Dropout, Flatten
-from deep_insight.layers.input import InputLayer
-from deep_insight.layers.pooling import MaxPool2D
-from deep_insight.model.model import TrainModel, EvaluateModel, PredictModel
+from deep_insight.k.layers import Convolution2D
+from deep_insight.k.layers import Dense, Dropout, Flatten
+from deep_insight.k.layers import InputLayer
+from deep_insight.k.layers import MaxPool2D
+from deep_insight.k.model import TrainModel, EvaluateModel, PredictModel
 
 
 class TestLeNet(unittest.TestCase):
