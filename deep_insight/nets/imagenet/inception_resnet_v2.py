@@ -65,12 +65,17 @@ class InceptionResnetV2(Base):
 class TestInput(TestCase):
 
     def setUp(self) -> None:
-        self.is_local = False
+        self.is_local = True
         self.data_dir = os.path.join(self.path, 'data/data/cifar10')
         self.model_dir = os.path.join(self.path, 'data/model/inception_resnet_v2_cifar10')
 
+    @unittest.skip("")
+    def test_inception_resnet_v2(self):
+        InceptionResnetV2().run()
+        SummaryLayer().run()
+
     # @unittest.skip("")
-    def test_input(self):
+    def test_inception_resnet_v2_train(self):
         Cifar10(self.data_dir, one_hot=True, mode='test').b(DATA_BRANCH).run()
         InceptionResnetV2().b(MODEL_BRANCH).run()
         Compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy']).run()
