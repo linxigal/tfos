@@ -15,9 +15,8 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model, load_model
 from tensorflow.python.keras.optimizers import deserialize
-from tensorflowonspark import TFNode
 
-from tfos.base import ModelType, gmt
+from tfos.base import ModelType, gmt, logger
 from tfos.base.worker import Worker
 from tfos.base.gfile import ModelDir
 
@@ -29,13 +28,10 @@ class KWorker(Worker):
         self.model_suffix = 'h5'
         self.labels = []
         self.tmp_dir = "/tmp/tfos/{}".format(int(time.time() * 1000))
-
-    def create_tmp_dir(self):
         tf.io.gfile.makedirs(self.tmp_dir)
 
     def delete_tmp_dir(self):
-        if tf.io.gfile.exists(self.tmp_dir):
-            tf.io.gfile.rmtree(self.tmp_dir)
+        tf.io.gfile.rmtree(self.tmp_dir)
 
     @property
     def model_tmp_path(self):
@@ -65,26 +61,12 @@ class KWorker(Worker):
     def save_model(self):
         if self.task_index == 0:
             self.model.save(self.model_tmp_path)
-            tf.io.gfile.copy(self.model_tmp_path, self.model_path, True)
-            tf.io.gfile.rmtree(self.tmp_dir)
+            tf.io.gfile.rename(self.model_tmp_path, self.model_path, True)
 
     def load_model(self):
         tf.io.gfile.copy(self.model_path, self.model_tmp_path, True)
         K.set_learning_phase(False)
         self.model = load_model(self.model_tmp_path)
-
-    def __call__(self, args, ctx):
-        self.task_index = ctx.task_index
-        self.job_name = ctx.job_name
-        self.cluster, self.server = TFNode.start_cluster_server(ctx)
-        self.tf_feed = TFNode.DataFeed(ctx.mgr)
-        if ctx.job_name == "ps":
-            self.server.join()
-        elif ctx.job_name == "worker":
-            self.create_tmp_dir()
-            self.build_model()
-            self.execute()
-            self.delete_tmp_dir()
 
 
 class TrainWorker(KWorker):
@@ -180,6 +162,7 @@ class EvaluateWorker(KWorker):
                                                 steps=self.steps_per_epoch)
             ModelDir.write_result(result_file, self.get_results(his))
             self.tf_feed.terminate()
+            self.delete_tmp_dir()
 
 
 class PredictWorker(KWorker):
@@ -208,6 +191,7 @@ class PredictWorker(KWorker):
                                                steps=self.steps_per_epoch)
             ModelDir.write_result(result_file, self.get_results(his))
             self.tf_feed.terminate()
+            self.delete_tmp_dir()
 
 
 class RecurrentPredictWorker(KWorker):
@@ -244,3 +228,4 @@ class RecurrentPredictWorker(KWorker):
                 ModelDir.write_str(result_file, "\n", True)
 
             self.tf_feed.terminate()
+            self.delete_tmp_dir()
