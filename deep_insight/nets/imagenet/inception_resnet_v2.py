@@ -18,25 +18,25 @@ from deep_insight.data.cifar import Cifar10
 
 class InceptionResnetV2(Base):
     """InceptionResnetV2模型
-        InceptionResnetV2模型是google推出的深度CNN模型，结合了ResNet与GoogleNet。
 
-        InceptionResnetV2是一个完整的模型
+    InceptionResnetV2模型是google推出的深度CNN模型，结合了ResNet与GoogleNet。
 
-        参数
-            输入维度：input_shape
-                大或等于0的整数，字典长度，即输入数据最大下标+1
-            维度转换: reshape
-                嵌入矩阵的初始化方法，为预定义初始化方法名的字符串，或用于初始化权重的初始化器。参考initializers
-            输出维度：out_dense
-                大于0的整数，代表全连接嵌入的维度
+    InceptionResnetV2是一个完整的模型
 
+    参数:
+        input_shape: 输入维度
+            大或等于0的整数，字典长度，即输入数据最大下标+1
+        reshape: 维度转换
+            嵌入矩阵的初始化方法，为预定义初始化方法名的字符串，或用于初始化权重的初始化器。参考initializers
+        out_dense: 输出维度
+            大于0的整数，代表全连接嵌入的维度
 
-        输入shape
-            形如（samples，sequence_length）的2D张量
+    输入shape
+        形如（samples，sequence_length）的2D张量
 
-        输出shape
-            形如(samples, sequence_length, output_dim)的3D张量
-        """
+    输出shape
+        形如(samples, sequence_length, output_dim)的3D张量
+    """
 
     def __init__(self, input_shape='32,32,3', reshape=None,
                  out_dense='10'):
@@ -47,6 +47,7 @@ class InceptionResnetV2(Base):
 
     def run(self):
         param = self.params
+
         from tfos.nets.imagenet.inception_resnet_v2 import InceptionResnetV2
 
         # param = json.loads('<#zzjzParam#>')
