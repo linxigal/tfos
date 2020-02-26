@@ -71,17 +71,6 @@ class TFWorker(Worker):
     def execute(self):
         raise NotImplementedError
 
-    def __call__(self, args, ctx):
-        self.task_index = ctx.task_index
-        self.job_name = ctx.job_name
-        self.cluster, self.server = TFNode.start_cluster_server(ctx)
-        self.tf_feed = TFNode.DataFeed(ctx.mgr)
-        if ctx.job_name == "ps":
-            self.server.join()
-        elif ctx.job_name == "worker":
-            self.build_model()
-            self.execute()
-
 
 class TFTrainWorker(TFWorker):
     def __init__(self, model_rdd, go_on=False, *args, **kwargs):

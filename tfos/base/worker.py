@@ -7,6 +7,8 @@
 
 import os
 
+from tensorflowonspark import TFNode
+
 
 class Worker(object):
     def __init__(self, batch_size=1,
@@ -48,3 +50,14 @@ class Worker(object):
         if self.model_suffix is None:
             raise ValueError("save model suffix couldn't be None, choices pb|h5")
         return os.path.join(self.save_dir, '{}.{}'.format(self.name, self.model_suffix))
+
+    def __call__(self, args, ctx):
+        self.task_index = ctx.task_index
+        self.job_name = ctx.job_name
+        self.cluster, self.server = TFNode.start_cluster_server(ctx)
+        self.tf_feed = TFNode.DataFeed(ctx.mgr)
+        if ctx.job_name == "ps":
+            self.server.join()
+        elif ctx.job_name == "worker":
+            self.build_model()
+            self.execute()
