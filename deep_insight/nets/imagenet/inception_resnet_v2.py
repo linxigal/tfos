@@ -9,12 +9,11 @@
 
 """
 
+from deep_insight.k.compile import Compile
+from deep_insight.k.train import TrainModel
 
 from deep_insight.base import *
 from deep_insight.data.cifar import Cifar10
-from deep_insight.compile import CompileAdvanced,Compile
-from deep_insight.model.model import TrainModel
-from tfos.base import logger
 
 
 class InceptionResnetV2(Base):
@@ -48,9 +47,6 @@ class InceptionResnetV2(Base):
 
     def run(self):
         param = self.params
-        from tfos.layers import EmbeddingLayer
-        from tfos.utils import convert_bool
-        from tfos.choices import BOOLEAN
         from tfos.nets.imagenet.inception_resnet_v2 import InceptionResnetV2
 
         # param = json.loads('<#zzjzParam#>')
@@ -59,11 +55,12 @@ class InceptionResnetV2(Base):
         out_dense = param.get("out_dense")
 
         input_shape = tuple(input_shape.split(','))
-        #reshape = tuple(reshape.split(','))
+        # reshape = tuple(reshape.split(','))
         out_dense = int(out_dense)
         output_df = InceptionResnetV2(sqlc=sqlc).add(input_shape, reshape, out_dense)
         outputRDD('<#zzjzRddName#>_InceptionResnetV2_mode', output_df)
         output_df.show()
+
 
 class TestInput(TestCase):
 
@@ -76,16 +73,14 @@ class TestInput(TestCase):
     def test_input(self):
         Cifar10(self.data_dir, one_hot=True, mode='test').b(DATA_BRANCH).run()
         InceptionResnetV2().b(MODEL_BRANCH).run()
-        #Compile().run()
         Compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy']).run()
         TrainModel(
             input_prev_layers=MODEL_BRANCH,
             input_rdd_name=DATA_BRANCH,
             cluster_size=3,
             num_ps=1,
-            batch_size=64,
-            epochs=2,
-            #model_dir='hdfs://master:8020/data/model/inception_resnet_v2_cifar10',
+            batch_size=32,
+            epochs=1,
             model_dir=self.model_dir,
             go_on='false').run()
 
