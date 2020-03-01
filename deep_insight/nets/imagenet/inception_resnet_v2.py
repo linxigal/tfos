@@ -83,9 +83,9 @@ class TestInput(TestCase):
         TrainModel(
             input_prev_layers=MODEL_BRANCH,
             input_rdd_name=DATA_BRANCH,
-            cluster_size=3,
+            cluster_size=2,
             num_ps=1,
-            batch_size=32,
+            batch_size=4,
             epochs=1,
             model_dir=self.model_dir,
             go_on='false').run()

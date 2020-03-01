@@ -61,7 +61,7 @@ class KWorker(Worker):
     def save_model(self):
         if self.task_index == 0:
             self.model.save(self.model_tmp_path)
-            tf.io.gfile.rename(self.model_tmp_path, self.model_path, True)
+            tf.io.gfile.copy(self.model_tmp_path, self.model_path, True)
 
     def load_model(self):
         tf.io.gfile.copy(self.model_path, self.model_tmp_path, True)
