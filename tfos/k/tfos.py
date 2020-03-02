@@ -7,12 +7,10 @@
 """
 import math
 
-import tensorflow as tf
 from tensorflowonspark import TFCluster
 
-from tfos.base import ext_exception, logger
+from tfos.base import ext_exception
 from tfos.base.gfile import ModelDir
-from tfos.nets.yolov3.train import YOLOV3ModelTrainWorker, YOLOV3TinyModelTrainWorker
 from .worker import TrainWorker, EvaluateWorker, PredictWorker, RecurrentPredictWorker
 
 
@@ -102,70 +100,3 @@ class TFOS(object):
         cluster.shutdown()
         results = md.read_result(True)
         return self.sqlc.createDataFrame([{"result": result} for result in results])
-
-    @ext_exception('yolov3 train model')
-    def yolov3_train(self, model_rdd, batch_size, epochs, classes_path, anchors_path,
-                     train_path, val_path, image_size, model_dir, weights_path=None, freeze_body=2, go_on=False):
-        columns = model_rdd.columns
-        assert "model_config" in columns, "not exists model layer config!"
-        assert tf.io.gfile.exists(train_path), "train dataset path not exists!"
-        data_rdd = self.sc.textFile(train_path)
-        n_samples = data_rdd.count()
-        steps_per_epoch = math.ceil(n_samples / batch_size / self.num_workers)
-        md = ModelDir(model_dir, 'train*')
-        if go_on:
-            md.create_model_dir()
-        else:
-            md = md.rebuild_model_dir()
-        worker = YOLOV3ModelTrainWorker(model_rdd,
-                                        go_on=go_on,
-                                        batch_size=batch_size,
-                                        epochs=epochs,
-                                        classes_path=classes_path,
-                                        anchors_path=anchors_path,
-                                        weights_path=weights_path,
-                                        val_path=val_path,
-                                        image_size=image_size,
-                                        steps_per_epoch=steps_per_epoch,
-                                        freeze_body=freeze_body,
-                                        **md.to_dict())
-        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
-                                input_mode=self.input_mode)
-        cluster.train(data_rdd, num_epochs=epochs, feed_timeout=60000)
-        cluster.shutdown()
-        results = md.read_result()
-        if results:
-            return self.sqlc.createDataFrame(results)
-
-    @ext_exception('yolov3 tiny train model')
-    def yolov3_tiny_train(self, model_rdd, batch_size, epochs, classes_path, anchors_path, train_path,
-                          val_path, image_size, model_dir, weights_path=None, freeze_body=2, go_on=False):
-        columns = model_rdd.columns
-        assert "model_config" in columns, "not exists model layer config!"
-        assert tf.io.gfile.exists(train_path), "train dataset path not exists!"
-        data_rdd = self.sc.textFile(train_path)
-        n_samples = data_rdd.count()
-        steps_per_epoch = math.ceil(n_samples / batch_size / self.num_workers)
-        md = ModelDir(model_dir, 'train*')
-        if go_on:
-            md.create_model_dir()
-        else:
-            md = md.rebuild_model_dir()
-        worker = YOLOV3TinyModelTrainWorker(model_rdd,
-                                            go_on=go_on,
-                                            batch_size=batch_size,
-                                            epochs=epochs,
-                                            classes_path=classes_path,
-                                            anchors_path=anchors_path,
-                                            weights_path=weights_path,
-                                            val_path=val_path,
-                                            image_size=image_size,
-                                            steps_per_epoch=steps_per_epoch,
-                                            freeze_body=freeze_body,
-                                            **md.to_dict())
-        cluster = TFCluster.run(self.sc, worker, self.tf_args, self.cluster_size, self.num_ps,
-                                input_mode=self.input_mode)
-        cluster.train(data_rdd, num_epochs=epochs, feed_timeout=60000)
-        cluster.shutdown()
-        results = md.read_result()
-        return self.sqlc.createDataFrame(results)

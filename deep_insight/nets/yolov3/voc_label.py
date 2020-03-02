@@ -9,9 +9,6 @@
   
 """
 
-import unittest
-
-from deep_insight import *
 from deep_insight.base import *
 
 
@@ -46,33 +43,17 @@ class VOCLabel(Base):
         VOCLabelLayer(data_dir, output_dir, image_format).do()
 
 
-class TestVOCLabel(unittest.TestCase):
+class TestVOCLabel(TestCase):
 
     def setUp(self):
-        self.is_local = False
+        self.is_local = True
         self.image_format = 'jpg'
-
-    @property
-    def data_path(self):
-        if self.is_local:
-            local_path = '/home/wjl/github/keras-yolo3/VOCdevkit/VOC2007'
-            return local_path
-        else:
-            data_dir = 'data/data/yolov3/VOCdevkit/VOC2007'
-            return os.path.join(HDFS, data_dir)
-
-    @property
-    def output_path(self):
-        if self.is_local:
-            local_path = '/home/wjl/github/keras-yolo3/VOCdevkit/VOC2007/train'
-            return local_path
-        else:
-            data_dir = 'data/data/yolov3/VOCdevkit/VOC2007/train'
-            return os.path.join(HDFS, data_dir)
+        self.data_dir = join(self.path, 'data/data/VOCdevkit/VOC2007')
+        self.output_dir = join(self.path, 'data/data/VOCdevkit/model_data')
 
     # @unittest.skip('')
     def test_voc_label(self):
-        VOCLabel(self.data_path, self.output_path, self.image_format).run()
+        VOCLabel(self.data_dir, self.output_dir, self.image_format).run()
 
 
 if __name__ == '__main__':
