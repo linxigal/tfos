@@ -82,3 +82,6 @@ class TestCase(unittest.TestCase):
     @property
     def path(self):
         return ROOT_PATH if self.is_local else HDFS
+
+    def join(self, relative_path):
+        return os.path.join(self.path, relative_path)

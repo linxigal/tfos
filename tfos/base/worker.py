@@ -51,6 +51,12 @@ class Worker(object):
             raise ValueError("save model suffix couldn't be None, choices pb|h5")
         return os.path.join(self.save_dir, '{}.{}'.format(self.name, self.model_suffix))
 
+    def build_model(self):
+        pass
+
+    def execute(self):
+        pass
+
     def __call__(self, args, ctx):
         self.task_index = ctx.task_index
         self.job_name = ctx.job_name

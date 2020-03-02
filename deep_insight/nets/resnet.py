@@ -5,7 +5,6 @@
 :Time:  :
 :File   :
 """
-import unittest
 
 from tensorflow.python.keras.applications import ResNet50
 from tensorflow.python.keras.layers import Dense, Flatten
@@ -36,4 +35,4 @@ class TestResNet50(unittest.TestCase):
 
     def test_res_net50(self):
         ResNet50Layer()
-        SummaryLayer(lrn()).run()
+        SummaryLayer().run()

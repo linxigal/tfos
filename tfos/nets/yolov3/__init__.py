@@ -10,6 +10,6 @@
 """
 
 from .kmeans import YOLOV3KMeansLayer
-from .train import YOLOV3ModelTrainWorker, YOLOV3TinyModelTrainWorker
+from .worker import YOLOV3ModelTrainWorker, YOLOV3TinyModelTrainWorker
 from .voc_label import VOCLabelLayer
 from .yolov3 import YOLOV3ModelLayer, YOLOV3TinyModelLayer
